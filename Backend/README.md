@@ -17,6 +17,12 @@ API REST para NEXO, construida con Spring Boot, PostgreSQL y arquitectura hexago
 
 Flyway aplicará automáticamente la migración inicial al arrancar. Las credenciales no deben subirse a Git.
 
+## Endpoints iniciales
+
+- `GET /api/health`: verifica que la API está disponible.
+- `POST /api/auth/register`: registra un usuario y devuelve un token JWT.
+- `POST /api/auth/login`: autentica un usuario y devuelve un token JWT.
+
 ## Arquitectura
 
 - `domain`: reglas y entidades de negocio, sin Spring ni JPA.
