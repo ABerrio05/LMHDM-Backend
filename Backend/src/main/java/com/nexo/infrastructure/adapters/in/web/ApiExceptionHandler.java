@@ -4,6 +4,7 @@ import com.nexo.application.service.AuthenticationService.EmailAlreadyRegistered
 import com.nexo.application.service.AuthenticationService.InvalidCredentialsException;
 import com.nexo.application.service.TaskManagementService.TaskAccessDeniedException;
 import com.nexo.application.service.TaskManagementService.TaskNotFoundException;
+import com.nexo.application.service.ReminderManagementService.ReminderNotFoundException;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,8 @@ public class ApiExceptionHandler {
     ResponseEntity<Map<String, String>> taskNotFound() { return error(HttpStatus.NOT_FOUND, "Tarea no encontrada"); }
     @ExceptionHandler(TaskAccessDeniedException.class)
     ResponseEntity<Map<String, String>> taskAccessDenied() { return error(HttpStatus.FORBIDDEN, "No tienes acceso a esta tarea"); }
+    @ExceptionHandler(ReminderNotFoundException.class)
+    ResponseEntity<Map<String, String>> reminderNotFound() { return error(HttpStatus.NOT_FOUND, "Recordatorio no encontrado"); }
     @ExceptionHandler({IllegalArgumentException.class, MethodArgumentNotValidException.class})
     ResponseEntity<Map<String, String>> invalidRequest() { return error(HttpStatus.BAD_REQUEST, "Solicitud inválida"); }
     private ResponseEntity<Map<String, String>> error(HttpStatus status, String message) {

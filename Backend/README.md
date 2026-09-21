@@ -23,6 +23,7 @@ Flyway aplicará automáticamente la migración inicial al arrancar. Las credenc
 - `POST /api/auth/register`: registra un usuario y devuelve un token JWT.
 - `POST /api/auth/login`: autentica un usuario y devuelve un token JWT.
 - `POST /api/tasks`, `GET /api/tasks`, `GET /api/tasks/{id}`, `PUT /api/tasks/{id}`, `PATCH /api/tasks/{id}/status` y `DELETE /api/tasks/{id}`: CRUD protegido de tareas.
+- `POST` y `GET /api/tasks/{taskId}/reminders`, `DELETE /api/reminders/{id}`: recordatorios asociados a una tarea propia.
 
 ## Arquitectura
 

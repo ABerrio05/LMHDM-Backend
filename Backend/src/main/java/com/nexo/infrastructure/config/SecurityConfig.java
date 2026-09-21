@@ -18,6 +18,9 @@ import com.nexo.application.service.AuthenticationService;
 import com.nexo.application.ports.in.TaskManagementUseCase;
 import com.nexo.application.ports.out.TaskRepositoryPort;
 import com.nexo.application.service.TaskManagementService;
+import com.nexo.application.ports.in.ReminderManagementUseCase;
+import com.nexo.application.ports.out.ReminderRepositoryPort;
+import com.nexo.application.service.ReminderManagementService;
 import com.nexo.infrastructure.adapters.in.web.JwtAuthenticationFilter;
 
 @Configuration
@@ -45,5 +48,10 @@ public class SecurityConfig {
     @Bean
     TaskManagementUseCase taskManagementUseCase(TaskRepositoryPort tasks) {
         return new TaskManagementService(tasks);
+    }
+
+    @Bean
+    ReminderManagementUseCase reminderManagementUseCase(ReminderRepositoryPort reminders, TaskRepositoryPort tasks) {
+        return new ReminderManagementService(reminders, tasks);
     }
 }
