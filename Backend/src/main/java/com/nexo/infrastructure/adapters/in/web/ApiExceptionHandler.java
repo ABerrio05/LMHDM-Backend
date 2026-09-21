@@ -2,6 +2,8 @@ package com.nexo.infrastructure.adapters.in.web;
 
 import com.nexo.application.service.AuthenticationService.EmailAlreadyRegisteredException;
 import com.nexo.application.service.AuthenticationService.InvalidCredentialsException;
+import com.nexo.application.service.TaskManagementService.TaskAccessDeniedException;
+import com.nexo.application.service.TaskManagementService.TaskNotFoundException;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,10 @@ public class ApiExceptionHandler {
     ResponseEntity<Map<String, String>> invalidCredentials() {
         return error(HttpStatus.UNAUTHORIZED, "Correo o contraseña inválidos");
     }
+    @ExceptionHandler(TaskNotFoundException.class)
+    ResponseEntity<Map<String, String>> taskNotFound() { return error(HttpStatus.NOT_FOUND, "Tarea no encontrada"); }
+    @ExceptionHandler(TaskAccessDeniedException.class)
+    ResponseEntity<Map<String, String>> taskAccessDenied() { return error(HttpStatus.FORBIDDEN, "No tienes acceso a esta tarea"); }
     @ExceptionHandler({IllegalArgumentException.class, MethodArgumentNotValidException.class})
     ResponseEntity<Map<String, String>> invalidRequest() { return error(HttpStatus.BAD_REQUEST, "Solicitud inválida"); }
     private ResponseEntity<Map<String, String>> error(HttpStatus status, String message) {

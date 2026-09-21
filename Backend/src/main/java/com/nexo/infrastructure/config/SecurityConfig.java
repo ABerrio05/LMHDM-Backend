@@ -15,6 +15,9 @@ import com.nexo.application.ports.out.PasswordHasherPort;
 import com.nexo.application.ports.out.TokenProviderPort;
 import com.nexo.application.ports.out.UserRepositoryPort;
 import com.nexo.application.service.AuthenticationService;
+import com.nexo.application.ports.in.TaskManagementUseCase;
+import com.nexo.application.ports.out.TaskRepositoryPort;
+import com.nexo.application.service.TaskManagementService;
 import com.nexo.infrastructure.adapters.in.web.JwtAuthenticationFilter;
 
 @Configuration
@@ -37,5 +40,10 @@ public class SecurityConfig {
     AuthenticationUseCase authenticationUseCase(UserRepositoryPort users, PasswordHasherPort passwordHasher,
                                                 TokenProviderPort tokenProvider) {
         return new AuthenticationService(users, passwordHasher, tokenProvider);
+    }
+
+    @Bean
+    TaskManagementUseCase taskManagementUseCase(TaskRepositoryPort tasks) {
+        return new TaskManagementService(tasks);
     }
 }
