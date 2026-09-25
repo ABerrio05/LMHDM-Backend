@@ -25,6 +25,15 @@ Flyway aplicará automáticamente la migración inicial al arrancar. Las credenc
 - `POST /api/tasks`, `GET /api/tasks`, `GET /api/tasks/{id}`, `PUT /api/tasks/{id}`, `PATCH /api/tasks/{id}/status` y `DELETE /api/tasks/{id}`: CRUD protegido de tareas.
 - `POST` y `GET /api/tasks/{taskId}/reminders`, `DELETE /api/reminders/{id}`: recordatorios asociados a una tarea propia.
 
+## Pruebas con Postman
+
+1. Importe `postman/NEXO.postman_collection.json` y `postman/NEXO.local.postman_environment.json` en Postman.
+2. Seleccione el entorno **NEXO Local**.
+3. Cambie el valor de `email` por uno que no esté registrado aún.
+4. Con la API y PostgreSQL levantados, ejecute en orden: **Health**, **Registrar usuario** (o **Iniciar sesión**), **Crear tarea** y el resto de solicitudes.
+
+La colección guarda automáticamente `accessToken`, `taskId` y `reminderId` para las solicitudes siguientes. No suba valores reales de token o contraseñas al repositorio.
+
 ## Arquitectura
 
 - `domain`: reglas y entidades de negocio, sin Spring ni JPA.

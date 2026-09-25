@@ -1,0 +1,86 @@
+{
+  "info": {
+    "_postman_id": "d236dc02-8bfb-4e9c-8e6a-6ff4462a1b4e",
+    "name": "NEXO Backend API",
+    "description": "Colección de pruebas del backend NEXO. Selecciona el entorno NEXO Local antes de ejecutarla.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "API disponible",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/health" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('API responde UP', function () {", "  pm.response.to.have.status(200);", "  pm.expect(pm.response.json().status).to.eql('UP');", "});"] } }]
+        }
+      ]
+    },
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Registrar usuario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"{{name}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}" },
+            "url": "{{baseUrl}}/auth/register"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Usuario creado', function () { pm.response.to.have.status(201); });", "const response = pm.response.json();", "pm.environment.set('accessToken', response.accessToken);", "pm.environment.set('userId', response.userId);"] } }]
+        },
+        {
+          "name": "Iniciar sesión",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}" },
+            "url": "{{baseUrl}}/auth/login"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Credenciales aceptadas', function () { pm.response.to.have.status(200); });", "const response = pm.response.json();", "pm.environment.set('accessToken', response.accessToken);", "pm.environment.set('userId', response.userId);"] } }]
+        }
+      ]
+    },
+    {
+      "name": "Tareas",
+      "item": [
+        {
+          "name": "Crear tarea",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Preparar comité\",\n  \"description\": \"Presentar NEXO\",\n  \"dueDate\": \"2026-09-30T14:00:00\",\n  \"priority\": \"ALTA\"\n}" },
+            "url": "{{baseUrl}}/tasks"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Tarea creada', function () { pm.response.to.have.status(201); });", "pm.environment.set('taskId', pm.response.json().id);"] } }]
+        },
+        { "name": "Listar mis tareas", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/tasks" } },
+        { "name": "Consultar tarea", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/tasks/{{taskId}}" } },
+        {
+          "name": "Editar tarea",
+          "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"title\": \"Preparar comité de NEXO\",\n  \"description\": \"Presentar arquitectura y Scrum\",\n  \"dueDate\": \"2026-10-01T09:00:00\",\n  \"priority\": \"MEDIA\"\n}" }, "url": "{{baseUrl}}/tasks/{{taskId}}" }
+        },
+        {
+          "name": "Completar tarea",
+          "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"COMPLETADA\"\n}" }, "url": "{{baseUrl}}/tasks/{{taskId}}/status" }
+        },
+        { "name": "Eliminar tarea", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/tasks/{{taskId}}" } }
+      ]
+    },
+    {
+      "name": "Recordatorios",
+      "item": [
+        {
+          "name": "Crear recordatorio",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"scheduledAt\": \"2026-09-30T13:30:00\",\n  \"message\": \"La tarea vence en 30 minutos\"\n}" }, "url": "{{baseUrl}}/tasks/{{taskId}}/reminders" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Recordatorio creado', function () { pm.response.to.have.status(201); });", "pm.environment.set('reminderId', pm.response.json().id);"] } }]
+        },
+        { "name": "Listar recordatorios", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/tasks/{{taskId}}/reminders" } },
+        { "name": "Eliminar recordatorio", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/reminders/{{reminderId}}" } }
+      ]
+    }
+  ]
+}
