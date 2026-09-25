@@ -17,6 +17,8 @@ API REST para NEXO, construida con Spring Boot, PostgreSQL y arquitectura hexago
 
 Flyway aplicará automáticamente la migración inicial al arrancar. Las credenciales no deben subirse a Git.
 
+La API permite solicitudes CORS desde `http://localhost:4200` por defecto. Para otro origen local, cambie `CORS_ALLOWED_ORIGINS` en su archivo `.env`.
+
 ## Endpoints iniciales
 
 - `GET /api/health`: verifica que la API está disponible.
