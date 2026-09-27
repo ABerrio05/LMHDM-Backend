@@ -11,6 +11,7 @@ Demostrar el flujo completo **Angular → API Spring Boot → PostgreSQL**, la a
 - En Postman, importar `Backend/postman/NEXO.postman_collection.json` y el entorno local.
 - Frontend activo en el puerto 4200 y configurado con la URL de API correcta.
 - Si frontend y backend están en computadores distintos, usar la IP LAN del backend, no `localhost`.
+- En el computador del backend, permitir el puerto TCP 8080 para redes privadas en el Firewall de Windows.
 
 ## Demostración de funcionalidades
 

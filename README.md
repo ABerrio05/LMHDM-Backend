@@ -33,6 +33,8 @@ La colección de demostración está en `Backend/postman/NEXO.postman_collection
 - Si ambos proyectos se ejecutan en el mismo computador: `http://localhost:8080/api`.
 - Si están en computadores distintos pero en la misma red: use la IP LAN del computador que ejecuta el backend, por ejemplo `http://192.168.1.4:8080/api`.
 - El backend permite solicitudes CORS desde `http://localhost:4200`; se configura con `CORS_ALLOWED_ORIGINS` en `.env`.
+- Para el repositorio frontend: entre a su carpeta `Frontend`, ejecute `npm install` una sola vez y luego `npm start`. Angular queda disponible por defecto en `http://localhost:4200`.
+- En una prueba entre computadores, Windows debe permitir conexiones TCP entrantes al puerto 8080 en la red privada.
 
 ## Git y Scrum
 
