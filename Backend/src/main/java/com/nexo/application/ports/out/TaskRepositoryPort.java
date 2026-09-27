@@ -7,6 +7,7 @@ import java.util.Optional;
 public interface TaskRepositoryPort {
     Task save(Task task);
     List<Task> findAllByOwnerId(Long ownerId);
+    List<Task> findAllBySpaceId(Long spaceId);
     Optional<Task> findById(Long taskId);
     void delete(Task task);
 }

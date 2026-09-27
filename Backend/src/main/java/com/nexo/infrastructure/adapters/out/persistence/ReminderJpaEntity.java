@@ -23,4 +23,8 @@ public class ReminderJpaEntity {
     public LocalDateTime getScheduledAt() { return scheduledAt; }
     public String getMessage() { return message; }
     public Long getTaskId() { return taskId; }
+    public void update(LocalDateTime scheduledAt, String message) {
+        this.scheduledAt = scheduledAt;
+        this.message = message;
+    }
 }

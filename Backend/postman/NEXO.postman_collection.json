@@ -79,7 +79,25 @@
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Recordatorio creado', function () { pm.response.to.have.status(201); });", "pm.environment.set('reminderId', pm.response.json().id);"] } }]
         },
         { "name": "Listar recordatorios", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/tasks/{{taskId}}/reminders" } },
+        { "name": "Editar recordatorio", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"scheduledAt\": \"2026-09-30T13:45:00\",\n  \"message\": \"Recordatorio actualizado\"\n}" }, "url": "{{baseUrl}}/reminders/{{reminderId}}" } },
         { "name": "Eliminar recordatorio", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/reminders/{{reminderId}}" } }
+      ]
+    },
+    {
+      "name": "Espacios colaborativos",
+      "item": [
+        {
+          "name": "Crear espacio",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Comité NEXO\",\n  \"description\": \"Tareas compartidas para la presentación\"\n}" }, "url": "{{baseUrl}}/spaces" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Espacio creado', function () { pm.response.to.have.status(201); });", "pm.environment.set('spaceId', pm.response.json().id);"] } }]
+        },
+        { "name": "Listar mis espacios", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/spaces" } },
+        {
+          "name": "Invitar miembro",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{invitedEmail}}\",\n  \"role\": \"MIEMBRO\"\n}" }, "url": "{{baseUrl}}/spaces/{{spaceId}}/members" }
+        },
+        { "name": "Listar miembros", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/spaces/{{spaceId}}/members" } },
+        { "name": "Listar tareas compartidas", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/spaces/{{spaceId}}/tasks" } }
       ]
     }
   ]

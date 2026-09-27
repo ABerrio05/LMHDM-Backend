@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,6 +36,12 @@ public class ReminderController {
     @GetMapping("/tasks/{taskId}/reminders")
     public List<Reminder> list(@AuthenticationPrincipal Long userId, @PathVariable Long taskId) {
         return reminders.listForTask(userId, taskId);
+    }
+    @PutMapping("/reminders/{reminderId}")
+    public Reminder update(@AuthenticationPrincipal Long userId, @PathVariable Long reminderId,
+                           @Valid @RequestBody ReminderRequest request) {
+        return reminders.update(userId, reminderId,
+                new ReminderManagementUseCase.UpdateReminderCommand(request.scheduledAt(), request.message()));
     }
     @DeleteMapping("/reminders/{reminderId}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal Long userId, @PathVariable Long reminderId) {

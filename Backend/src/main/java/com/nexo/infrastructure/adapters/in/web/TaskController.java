@@ -30,7 +30,7 @@ public class TaskController {
     @PostMapping
     public ResponseEntity<Task> create(@AuthenticationPrincipal Long userId, @Valid @RequestBody TaskRequest request) {
         Task task = tasks.create(userId, new TaskManagementUseCase.CreateTaskCommand(request.title(), request.description(),
-                request.dueDate(), request.priority()));
+                request.dueDate(), request.priority(), request.spaceId()));
         return ResponseEntity.status(HttpStatus.CREATED).body(task);
     }
     @GetMapping public List<Task> list(@AuthenticationPrincipal Long userId) { return tasks.listMine(userId); }
@@ -49,6 +49,6 @@ public class TaskController {
     }
 
     public record TaskRequest(@NotBlank @Size(max = 255) String title, String description, LocalDateTime dueDate,
-                              @NotNull Task.Priority priority) { }
+                              @NotNull Task.Priority priority, Long spaceId) { }
     public record StatusRequest(@NotNull Task.TaskStatus status) { }
 }

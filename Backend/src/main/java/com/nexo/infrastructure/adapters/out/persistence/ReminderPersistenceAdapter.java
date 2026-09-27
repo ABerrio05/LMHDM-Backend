@@ -11,7 +11,13 @@ public class ReminderPersistenceAdapter implements ReminderRepositoryPort {
     private final SpringDataReminderRepository repository;
     public ReminderPersistenceAdapter(SpringDataReminderRepository repository) { this.repository = repository; }
     @Override public Reminder save(Reminder reminder) {
-        ReminderJpaEntity saved = repository.save(new ReminderJpaEntity(reminder.scheduledAt(), reminder.message(), reminder.taskId()));
+        ReminderJpaEntity entity = new ReminderJpaEntity(reminder.scheduledAt(), reminder.message(), reminder.taskId());
+        if (reminder.id() != null) {
+            ReminderJpaEntity existing = repository.findById(reminder.id()).orElseThrow();
+            existing.update(entity.getScheduledAt(), entity.getMessage());
+            entity = existing;
+        }
+        ReminderJpaEntity saved = repository.save(entity);
         return toDomain(saved);
     }
     @Override public List<Reminder> findAllByTaskId(Long taskId) {

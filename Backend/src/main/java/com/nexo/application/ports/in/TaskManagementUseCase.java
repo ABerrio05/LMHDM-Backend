@@ -12,6 +12,6 @@ public interface TaskManagementUseCase {
     Task changeStatus(Long ownerId, Long taskId, Task.TaskStatus status);
     void delete(Long ownerId, Long taskId);
 
-    record CreateTaskCommand(String title, String description, LocalDateTime dueDate, Task.Priority priority) { }
+    record CreateTaskCommand(String title, String description, LocalDateTime dueDate, Task.Priority priority, Long spaceId) { }
     record UpdateTaskCommand(String title, String description, LocalDateTime dueDate, Task.Priority priority) { }
 }

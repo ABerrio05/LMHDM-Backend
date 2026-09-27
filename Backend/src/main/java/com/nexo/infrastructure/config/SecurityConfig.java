@@ -27,6 +27,10 @@ import com.nexo.application.service.TaskManagementService;
 import com.nexo.application.ports.in.ReminderManagementUseCase;
 import com.nexo.application.ports.out.ReminderRepositoryPort;
 import com.nexo.application.service.ReminderManagementService;
+import com.nexo.application.ports.in.CollaborativeSpaceUseCase;
+import com.nexo.application.ports.out.CollaborativeSpaceRepositoryPort;
+import com.nexo.application.ports.out.SpaceMemberRepositoryPort;
+import com.nexo.application.service.CollaborativeSpaceService;
 import com.nexo.infrastructure.adapters.in.web.JwtAuthenticationFilter;
 
 @Configuration
@@ -67,12 +71,19 @@ public class SecurityConfig {
     }
 
     @Bean
-    TaskManagementUseCase taskManagementUseCase(TaskRepositoryPort tasks) {
-        return new TaskManagementService(tasks);
+    TaskManagementUseCase taskManagementUseCase(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members) {
+        return new TaskManagementService(tasks, members);
     }
 
     @Bean
     ReminderManagementUseCase reminderManagementUseCase(ReminderRepositoryPort reminders, TaskRepositoryPort tasks) {
         return new ReminderManagementService(reminders, tasks);
+    }
+
+    @Bean
+    CollaborativeSpaceUseCase collaborativeSpaceUseCase(CollaborativeSpaceRepositoryPort spaces,
+                                                         SpaceMemberRepositoryPort members, UserRepositoryPort users,
+                                                         TaskRepositoryPort tasks) {
+        return new CollaborativeSpaceService(spaces, members, users, tasks);
     }
 }

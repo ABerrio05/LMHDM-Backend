@@ -6,12 +6,12 @@ API REST para NEXO, construida con Spring Boot, PostgreSQL y arquitectura hexago
 
 - JDK 21
 - Maven 3.9 o superior
-- Docker Desktop (para PostgreSQL local)
+- PostgreSQL 14 o superior (local o mediante Docker)
 
 ## Puesta en marcha local
 
 1. Copie `.env.example` a `.env` y reemplace `JWT_SECRET`.
-2. Inicie PostgreSQL: `docker compose --env-file .env up -d`.
+2. Inicie PostgreSQL local o, si Docker está disponible: `docker compose --env-file .env up -d`.
 3. Exporte las variables de `.env` en su terminal.
 4. Ejecute: `mvn spring-boot:run`.
 
@@ -25,7 +25,8 @@ La API permite solicitudes CORS desde `http://localhost:4200` por defecto. Para 
 - `POST /api/auth/register`: registra un usuario y devuelve un token JWT.
 - `POST /api/auth/login`: autentica un usuario y devuelve un token JWT.
 - `POST /api/tasks`, `GET /api/tasks`, `GET /api/tasks/{id}`, `PUT /api/tasks/{id}`, `PATCH /api/tasks/{id}/status` y `DELETE /api/tasks/{id}`: CRUD protegido de tareas.
-- `POST` y `GET /api/tasks/{taskId}/reminders`, `DELETE /api/reminders/{id}`: recordatorios asociados a una tarea propia.
+- `POST` y `GET /api/tasks/{taskId}/reminders`, `PUT` y `DELETE /api/reminders/{id}`: CRUD de recordatorios asociados a una tarea propia.
+- `POST` y `GET /api/spaces`, `GET /api/spaces/{id}`, `POST` y `GET /api/spaces/{id}/members`, `GET /api/spaces/{id}/tasks`: espacios colaborativos, invitaciones por correo y tareas compartidas.
 
 ## Pruebas con Postman
 

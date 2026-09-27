@@ -27,6 +27,9 @@ public class TaskPersistenceAdapter implements TaskRepositoryPort {
     public List<Task> findAllByOwnerId(Long ownerId) {
         return repository.findAllByOwnerIdOrderByDueDateAsc(ownerId).stream().map(this::toDomain).toList();
     }
+    @Override public List<Task> findAllBySpaceId(Long spaceId) {
+        return repository.findAllBySpaceIdOrderByDueDateAsc(spaceId).stream().map(this::toDomain).toList();
+    }
     @Override public Optional<Task> findById(Long taskId) { return repository.findById(taskId).map(this::toDomain); }
     @Override public void delete(Task task) { repository.deleteById(task.id()); }
 

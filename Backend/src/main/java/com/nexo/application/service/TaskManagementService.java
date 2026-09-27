@@ -2,19 +2,26 @@ package com.nexo.application.service;
 
 import com.nexo.application.ports.in.TaskManagementUseCase;
 import com.nexo.application.ports.out.TaskRepositoryPort;
+import com.nexo.application.ports.out.SpaceMemberRepositoryPort;
 import com.nexo.domain.model.Task;
 import java.util.List;
 
 /** Casos de uso de tarea; no depende de HTTP, JPA ni Spring. */
 public class TaskManagementService implements TaskManagementUseCase {
     private final TaskRepositoryPort tasks;
+    private final SpaceMemberRepositoryPort members;
 
-    public TaskManagementService(TaskRepositoryPort tasks) { this.tasks = tasks; }
+    public TaskManagementService(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members) {
+        this.tasks = tasks; this.members = members;
+    }
 
     @Override
     public Task create(Long ownerId, CreateTaskCommand command) {
+        if (command.spaceId() != null && members.findBySpaceIdAndUserId(command.spaceId(), ownerId).isEmpty()) {
+            throw new TaskAccessDeniedException();
+        }
         return tasks.save(new Task(null, command.title(), command.description(), command.dueDate(),
-                command.priority(), Task.TaskStatus.PENDIENTE, ownerId, null, null));
+                command.priority(), Task.TaskStatus.PENDIENTE, ownerId, command.spaceId(), null));
     }
 
     @Override

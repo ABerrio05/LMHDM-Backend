@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 interface SpringDataTaskRepository extends JpaRepository<TaskJpaEntity, Long> {
     List<TaskJpaEntity> findAllByOwnerIdOrderByDueDateAsc(Long ownerId);
+    List<TaskJpaEntity> findAllBySpaceIdOrderByDueDateAsc(Long spaceId);
 }

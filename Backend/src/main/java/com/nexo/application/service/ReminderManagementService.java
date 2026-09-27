@@ -20,6 +20,11 @@ public class ReminderManagementService implements ReminderManagementUseCase {
     @Override public List<Reminder> listForTask(Long ownerId, Long taskId) {
         taskOwnedBy(ownerId, taskId); return reminders.findAllByTaskId(taskId);
     }
+    @Override public Reminder update(Long ownerId, Long reminderId, UpdateReminderCommand command) {
+        Reminder current = reminders.findById(reminderId).orElseThrow(ReminderNotFoundException::new);
+        taskOwnedBy(ownerId, current.taskId());
+        return reminders.save(new Reminder(current.id(), command.scheduledAt(), command.message(), current.taskId()));
+    }
     @Override public void delete(Long ownerId, Long reminderId) {
         Reminder reminder = reminders.findById(reminderId).orElseThrow(ReminderNotFoundException::new);
         taskOwnedBy(ownerId, reminder.taskId()); reminders.delete(reminder);
