@@ -2,11 +2,24 @@
   "info": {
     "_postman_id": "d236dc02-8bfb-4e9c-8e6a-6ff4462a1b4e",
     "name": "NEXO Backend API",
-    "description": "Colección de pruebas del backend NEXO. Selecciona el entorno NEXO Local antes de ejecutarla.",
+    "description": "Colección de pruebas del backend NEXO. Selecciona el entorno NEXO Local antes de ejecutarla. Si el correo conserva el valor de ejemplo, el Runner genera uno único para que registro e inicio de sesión se puedan ejecutar de principio a fin.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8080/api" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (pm.environment.get('email') === 'cambia-este-correo@example.com') {",
+          "  pm.environment.set('email', `nexo.demo.${Date.now()}@example.test`);",
+          "}"
+        ]
+      }
+    }
   ],
   "item": [
     {
@@ -57,17 +70,18 @@
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Tarea creada', function () { pm.response.to.have.status(201); });", "pm.environment.set('taskId', pm.response.json().id);"] } }]
         },
-        { "name": "Listar mis tareas", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/tasks" } },
-        { "name": "Consultar tarea", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/tasks/{{taskId}}" } },
+        { "name": "Listar mis tareas", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/tasks" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Lista de tareas disponible', function () { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"] } }] },
+        { "name": "Consultar tarea", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/tasks/{{taskId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Tarea consultada', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().id).to.eql(Number(pm.environment.get('taskId'))); });"] } }] },
         {
           "name": "Editar tarea",
-          "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"title\": \"Preparar comité de NEXO\",\n  \"description\": \"Presentar arquitectura y Scrum\",\n  \"dueDate\": \"2026-10-01T09:00:00\",\n  \"priority\": \"MEDIA\"\n}" }, "url": "{{baseUrl}}/tasks/{{taskId}}" }
+          "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"title\": \"Preparar comité de NEXO\",\n  \"description\": \"Presentar arquitectura y Scrum\",\n  \"dueDate\": \"2026-10-01T09:00:00\",\n  \"priority\": \"MEDIA\"\n}" }, "url": "{{baseUrl}}/tasks/{{taskId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Tarea editada', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().priority).to.eql('MEDIA'); });"] } }]
         },
         {
           "name": "Completar tarea",
-          "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"COMPLETADA\"\n}" }, "url": "{{baseUrl}}/tasks/{{taskId}}/status" }
-        },
-        { "name": "Eliminar tarea", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/tasks/{{taskId}}" } }
+          "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"COMPLETADA\"\n}" }, "url": "{{baseUrl}}/tasks/{{taskId}}/status" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Tarea completada', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('COMPLETADA'); });"] } }]
+        }
       ]
     },
     {
@@ -78,9 +92,10 @@
           "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"scheduledAt\": \"2026-09-30T13:30:00\",\n  \"message\": \"La tarea vence en 30 minutos\"\n}" }, "url": "{{baseUrl}}/tasks/{{taskId}}/reminders" },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Recordatorio creado', function () { pm.response.to.have.status(201); });", "pm.environment.set('reminderId', pm.response.json().id);"] } }]
         },
-        { "name": "Listar recordatorios", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/tasks/{{taskId}}/reminders" } },
-        { "name": "Editar recordatorio", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"scheduledAt\": \"2026-09-30T13:45:00\",\n  \"message\": \"Recordatorio actualizado\"\n}" }, "url": "{{baseUrl}}/reminders/{{reminderId}}" } },
-        { "name": "Eliminar recordatorio", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/reminders/{{reminderId}}" } }
+        { "name": "Listar recordatorios", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/tasks/{{taskId}}/reminders" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Lista de recordatorios disponible', function () { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"] } }] },
+        { "name": "Editar recordatorio", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{accessToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"scheduledAt\": \"2026-09-30T13:45:00\",\n  \"message\": \"Recordatorio actualizado\"\n}" }, "url": "{{baseUrl}}/reminders/{{reminderId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Recordatorio editado', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().message).to.eql('Recordatorio actualizado'); });"] } }] },
+        { "name": "Eliminar recordatorio", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/reminders/{{reminderId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Recordatorio eliminado', function () { pm.response.to.have.status(204); });"] } }] },
+        { "name": "Eliminar tarea", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }], "url": "{{baseUrl}}/tasks/{{taskId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Tarea eliminada', function () { pm.response.to.have.status(204); });"] } }] }
       ]
     },
     {
