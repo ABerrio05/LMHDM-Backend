@@ -28,6 +28,20 @@ El flujo es: Angular/Postman → controlador REST → puerto de entrada → serv
 
 La colección de demostración está en `Backend/postman/NEXO.postman_collection.json`. Importe también el entorno `NEXO.local.postman_environment.json`.
 
+## Decisiones técnicas y alcance actual
+
+- Se usa **JWT** para autenticar solicitudes REST y **BCrypt** para almacenar contraseñas de forma no reversible.
+- Los identificadores de las tablas se manejan como `BIGINT` para que correspondan con `Long` en Java. Flyway conserva las ocho tablas y relaciones requeridas por el modelo de datos.
+- Los valores de prioridad, estado y rol se validan como enumeraciones de dominio; no se aceptan valores arbitrarios desde la API.
+- La integración remota entre los dos computadores se resuelve temporalmente mediante un túnel HTTPS de ngrok. Las credenciales, JWT y la URL temporal no se versionan.
+- En este primer incremento se completaron autenticación, tareas, recordatorios y colaboración. Notas, recurrencias, envío real de notificaciones y panel administrativo permanecen priorizados en [BACKLOG.md](BACKLOG.md) para los siguientes sprints.
+
+## Evidencia de calidad
+
+- `mvn test` ejecuta pruebas unitarias de dominio y servicios, y una prueba HTTP de integración del registro.
+- GitHub Actions ejecuta esas pruebas al enviar cambios a `Desarrollo`, `Pre-produccion` o `main`.
+- La colección de Postman tiene aserciones automáticas y puede ejecutarse en orden para demostrar el flujo de autenticación, tareas y recordatorios.
+
 ## Integración Angular
 
 - Si ambos proyectos se ejecutan en el mismo computador: `http://localhost:8080/api`.
