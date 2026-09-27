@@ -11,6 +11,9 @@ El frontend debe conservar su origen `http://localhost:4200`. En cada petición 
 Authorization: Bearer <accessToken>
 ```
 
+Cuando se use la URL temporal de ngrok, el interceptor HTTP también debe enviar el encabezado
+`ngrok-skip-browser-warning: true` en todas las peticiones. Así se evita la página de advertencia del plan gratuito.
+
 El token llega en `accessToken` desde registro e inicio de sesión.
 
 ## Autenticación
