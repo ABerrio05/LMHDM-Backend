@@ -31,10 +31,10 @@ La colección de demostración está en `Backend/postman/NEXO.postman_collection
 ## Integración Angular
 
 - Si ambos proyectos se ejecutan en el mismo computador: `http://localhost:8080/api`.
-- Si están en computadores distintos pero en la misma red: use la IP LAN del computador que ejecuta el backend, por ejemplo `http://192.168.1.4:8080/api`.
+- Si están en equipos ubicados en redes distintas: use una URL HTTPS temporal de ngrok que exponga el backend, seguida de `/api`. Esa URL puede cambiar al reiniciar el túnel, por lo que no se versiona en el repositorio.
 - El backend permite solicitudes CORS desde `http://localhost:4200`; se configura con `CORS_ALLOWED_ORIGINS` en `.env`.
+- Cuando se use ngrok, el interceptor Angular debe añadir `ngrok-skip-browser-warning: true` a las peticiones, además de `Authorization: Bearer <accessToken>` cuando corresponda.
 - Para el repositorio frontend: entre a su carpeta `Frontend`, ejecute `npm install` una sola vez y luego `npm start`. Angular queda disponible por defecto en `http://localhost:4200`.
-- En una prueba entre computadores, Windows debe permitir conexiones TCP entrantes al puerto 8080 en la red privada.
 
 ## Git y Scrum
 

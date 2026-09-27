@@ -10,8 +10,8 @@ Demostrar el flujo completo **Angular → API Spring Boot → PostgreSQL**, la a
 - PostgreSQL activo y base `nexo` disponible.
 - En Postman, importar `Backend/postman/NEXO.postman_collection.json` y el entorno local.
 - Frontend activo en el puerto 4200 y configurado con la URL de API correcta.
-- Si frontend y backend están en computadores distintos, usar la IP LAN del backend, no `localhost`.
-- En el computador del backend, permitir el puerto TCP 8080 para redes privadas en el Firewall de Windows.
+- Si frontend y backend están en redes distintas, configurar Angular con la URL HTTPS temporal de ngrok del backend, seguida de `/api`.
+- Con ngrok, el interceptor Angular debe enviar `ngrok-skip-browser-warning: true`, además del JWT en rutas protegidas.
 
 ## Demostración de funcionalidades
 
@@ -62,7 +62,7 @@ Muestra las carpetas `domain`, `application` e `infrastructure` para probar la s
 
 ## Scrum, XP y Git
 
-- Sprint 1: autenticación, tareas, recordatorios y colaboración.
+- Sprint 1: autenticación, tareas, recordatorios y colaboración (las cuatro APIs están implementadas; la interfaz se integra desde el repositorio frontend).
 - Sprints 2 y 3: [BACKLOG.md](BACKLOG.md) contiene los requisitos pendientes y su prioridad.
 - XP: pruebas unitarias, prueba HTTP de registro, refactorización y CI con GitHub Actions.
 - Flujo de ramas obligatorio: `Desarrollo` → `Pre-produccion` → `main` mediante Pull Request.
