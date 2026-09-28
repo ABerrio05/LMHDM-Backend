@@ -1,0 +1,114 @@
+# Contrato de integración para Angular
+
+## Base URL
+
+- Mismo computador: `http://localhost:8080/api`
+- Equipos en redes distintas: usar la URL HTTPS temporal de ngrok que comparta el responsable del backend, seguida de `/api`.
+
+El frontend debe conservar su origen `http://localhost:4200`. En cada petición protegida envía:
+
+```http
+Authorization: Bearer <accessToken>
+```
+
+Cuando se use la URL temporal de ngrok, el interceptor HTTP también debe enviar el encabezado
+`ngrok-skip-browser-warning: true` en todas las peticiones. Así se evita la página de advertencia del plan gratuito.
+
+El token llega en `accessToken` desde registro e inicio de sesión.
+
+Ejemplo de interceptor: debe añadir `Authorization` solo si hay token y
+`ngrok-skip-browser-warning: true` cuando `apiUrl` sea una URL de ngrok. No se
+debe guardar ni versionar el token de un usuario de prueba.
+
+## Autenticación
+
+| Método y ruta | Cuerpo |
+|---|---|
+| `POST /auth/register` | `{ "name", "email", "password" }` |
+| `POST /auth/login` | `{ "email", "password" }` |
+
+Ambas respuestas incluyen `{ userId, name, email, accessToken }`.
+
+## Tareas
+
+- `POST /tasks`: `{ title, description?, dueDate?, priority, spaceId? }`
+- `GET /tasks`
+- `GET /tasks/{taskId}`
+- `PUT /tasks/{taskId}`: `{ title, description, dueDate, priority }`
+- `PATCH /tasks/{taskId}/status`: `{ status }`
+- `DELETE /tasks/{taskId}`
+
+Valores válidos: `priority`: `ALTA`, `MEDIA`, `BAJA`; `status`: `PENDIENTE`, `EN_PROGRESO`, `COMPLETADA`.
+
+`POST`, `GET`, `PUT` y `PATCH` devuelven una tarea con esta forma:
+
+```ts
+export interface Task {
+  id: number;
+  title: string;
+  description: string | null;
+  dueDate: string | null; // ISO local: 2026-09-27T15:30:00
+  priority: 'ALTA' | 'MEDIA' | 'BAJA';
+  status: 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA';
+  ownerId: number;
+  spaceId: number | null;
+  recurrenceId: number | null;
+}
+```
+
+`POST /tasks` responde `201`; `DELETE /tasks/{taskId}` responde `204` sin cuerpo.
+
+## Recordatorios
+
+- `POST /tasks/{taskId}/reminders`: `{ scheduledAt, message }`
+- `GET /tasks/{taskId}/reminders`
+- `PUT /reminders/{reminderId}`: `{ scheduledAt, message }`
+- `DELETE /reminders/{reminderId}`
+
+Las operaciones que devuelven un recordatorio usan:
+
+```ts
+export interface Reminder {
+  id: number;
+  scheduledAt: string; // ISO local: 2026-09-27T15:30:00
+  message: string;
+  taskId: number;
+}
+```
+
+## Espacios colaborativos
+
+- `POST /spaces`: `{ name, description }`
+- `GET /spaces`
+- `GET /spaces/{spaceId}`
+- `POST /spaces/{spaceId}/members`: `{ email, role }`
+- `GET /spaces/{spaceId}/members`
+- `GET /spaces/{spaceId}/tasks`
+
+Para crear una tarea compartida, usa `POST /tasks` e incluye el `spaceId`. Solo el administrador del espacio puede invitar usuarios. El usuario invitado debe estar registrado primero. Roles válidos: `ADMINISTRADOR`, `MODERADOR`, `MIEMBRO`, `INVITADO`.
+
+```ts
+export interface CollaborativeSpace {
+  id: number;
+  name: string;
+  description: string | null;
+  creatorId: number;
+  createdAt: string;
+}
+
+export interface SpaceMember {
+  id: number;
+  spaceId: number;
+  userId: number;
+  role: 'ADMINISTRADOR' | 'MODERADOR' | 'MIEMBRO' | 'INVITADO';
+  joinedAt: string;
+}
+```
+
+## Trabajo solicitado al frontend
+
+1. Configurar `apiUrl` según si ejecuta Angular en su equipo o en el mismo equipo del backend.
+2. Guardar el JWT tras login/register e instalar un interceptor que añada el encabezado `Authorization`.
+3. Crear vistas de registro/login, listado y formulario de tareas, recordatorios y espacios colaborativos.
+4. Mostrar respuestas de error del backend: `{ "message": "..." }`.
+5. Para la demo, preparar dos cuentas: una crea el espacio y otra acepta/consulta las tareas compartidas.
