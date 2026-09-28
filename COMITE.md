@@ -67,6 +67,22 @@ Muestra las carpetas `domain`, `application` e `infrastructure` para probar la s
 - XP: pruebas unitarias, prueba HTTP de registro, refactorización y CI con GitHub Actions.
 - Flujo de ramas obligatorio: `Desarrollo` → `Pre-produccion` → `main` mediante Pull Request.
 
+## Cierre de Pre-producción: evidencia mínima
+
+Antes de promover a `main`, ejecutar y capturar estas comprobaciones en las ramas
+`Pre-produccion` de ambos repositorios:
+
+1. En Angular: registrar un correo nuevo, iniciar sesión y verificar que se entra a `/tasks`.
+2. En Angular: crear una tarea, editarla o completarla y eliminarla si la interfaz lo permite.
+3. En Angular: crear y eliminar un recordatorio dentro de una tarea.
+4. En el navegador: verificar `GET /api/tasks` con estado `200` y el encabezado
+   `Access-Control-Allow-Origin: http://localhost:4200`.
+5. En PostgreSQL/pgAdmin: mostrar una fila en `usuario`, `tarea` y `recordatorio`.
+6. En backend: ejecutar `mvn test`; en frontend: ejecutar `npm run build`.
+
+Las capturas recomendadas son: pantalla de tareas, recordatorio dentro de una
+tarea, Network con la respuesta `200`, pgAdmin y los Pull Request fusionados.
+
 ## Evidencia técnica
 
 - Pruebas backend: `mvn test`.
@@ -74,6 +90,10 @@ Muestra las carpetas `domain`, `application` e `infrastructure` para probar la s
 - Migraciones de base de datos: `Backend/src/main/resources/db/migration`.
 - Variables de entorno: `Backend/.env.example`; las credenciales reales están en `.env`, que no se sube a Git.
 
-## Pendiente de interfaz
+## Estado de interfaz
 
-El backend está listo para las rutas descritas en [FRONTEND_INTEGRATION.md](FRONTEND_INTEGRATION.md). El frontend debe presentar las vistas para autenticación, tareas, recordatorios y espacios colaborativos, y usar un interceptor JWT.
+El frontend ya integra autenticación, guard de rutas, interceptor JWT, tareas y
+recordatorios. El backend está listo para las rutas descritas en
+[FRONTEND_INTEGRATION.md](FRONTEND_INTEGRATION.md). Para una siguiente entrega,
+la interfaz puede incorporar espacios colaborativos y las funcionalidades del
+backlog, sin alterar los contratos ya demostrados.
