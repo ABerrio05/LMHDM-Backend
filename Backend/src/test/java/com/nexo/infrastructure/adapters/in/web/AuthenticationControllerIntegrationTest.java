@@ -40,4 +40,14 @@ class AuthenticationControllerIntegrationTest {
 
         verify(authentication).register(any());
     }
+
+    @Test
+    void explainsWhichRegistrationFieldIsInvalid() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Ana\",\"email\":\"ana@nexo.test\",\"password\":\"a\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Datos de entrada inválidos"))
+                .andExpect(jsonPath("$.errors.password").value("La contraseña debe tener entre 8 y 72 caracteres"));
+    }
 }

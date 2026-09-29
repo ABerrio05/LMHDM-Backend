@@ -30,7 +30,16 @@ public class AuthenticationController {
         return ResponseEntity.ok(authentication.login(new AuthenticationUseCase.LoginCommand(request.email(), request.password())));
     }
 
-    public record RegisterRequest(@NotBlank @Size(max = 150) String name, @NotBlank @Email String email,
-                                  @NotBlank @Size(min = 8, max = 72) String password) { }
-    public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) { }
+    public record RegisterRequest(
+            @NotBlank(message = "El nombre es obligatorio")
+            @Size(max = 150, message = "El nombre no puede superar 150 caracteres") String name,
+            @NotBlank(message = "El correo es obligatorio")
+            @Email(message = "El correo debe tener un formato válido") String email,
+            @NotBlank(message = "La contraseña es obligatoria")
+            @Size(min = 8, max = 72, message = "La contraseña debe tener entre 8 y 72 caracteres") String password) { }
+
+    public record LoginRequest(
+            @NotBlank(message = "El correo es obligatorio")
+            @Email(message = "El correo debe tener un formato válido") String email,
+            @NotBlank(message = "La contraseña es obligatoria") String password) { }
 }
