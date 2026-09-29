@@ -73,7 +73,7 @@
         {
           "name": "Rechazar datos de registro inválidos",
           "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"\",\n  \"email\": \"correo-invalido\",\n  \"password\": \"corta\"\n}" }, "url": "{{baseUrl}}/auth/register" },
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Datos inválidos rechazados', function () { pm.response.to.have.status(400); });", "pm.expect(pm.response.json().message).to.eql('Solicitud inválida');"] } }]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Datos inválidos rechazados', function () { pm.response.to.have.status(400); });", "pm.expect(pm.response.json().message).to.eql('Datos de entrada inválidos');", "pm.expect(pm.response.json().errors).to.have.property('password');"] } }]
         }
       ]
     },

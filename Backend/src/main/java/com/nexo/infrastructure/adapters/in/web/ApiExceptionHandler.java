@@ -9,6 +9,7 @@ import com.nexo.application.service.CollaborativeSpaceService.SpaceAccessDeniedE
 import com.nexo.application.service.CollaborativeSpaceService.SpaceNotFoundException;
 import com.nexo.application.service.CollaborativeSpaceService.UserNotFoundException;
 import com.nexo.application.service.CollaborativeSpaceService.MemberAlreadyExistsException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +41,17 @@ public class ApiExceptionHandler {
     ResponseEntity<Map<String, String>> userNotFound() { return error(HttpStatus.NOT_FOUND, "Usuario no encontrado"); }
     @ExceptionHandler(MemberAlreadyExistsException.class)
     ResponseEntity<Map<String, String>> memberAlreadyExists() { return error(HttpStatus.CONFLICT, "El usuario ya pertenece al espacio"); }
-    @ExceptionHandler({IllegalArgumentException.class, MethodArgumentNotValidException.class})
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    ResponseEntity<Map<String, Object>> validationError(MethodArgumentNotValidException exception) {
+        Map<String, String> errors = new LinkedHashMap<>();
+        exception.getBindingResult().getFieldErrors().forEach(error ->
+                errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
+        return ResponseEntity.badRequest().body(Map.of(
+                "message", "Datos de entrada inválidos",
+                "errors", errors));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
     ResponseEntity<Map<String, String>> invalidRequest() { return error(HttpStatus.BAD_REQUEST, "Solicitud inválida"); }
     private ResponseEntity<Map<String, String>> error(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(Map.of("message", message));
