@@ -12,10 +12,9 @@ API REST para NEXO, construida con Spring Boot, PostgreSQL y arquitectura hexago
 
 1. Copie `.env.example` a `.env` y reemplace `JWT_SECRET`.
 2. Inicie PostgreSQL local o, si Docker está disponible: `docker compose --env-file .env up -d`.
-3. Exporte las variables de `.env` en su terminal.
-4. Ejecute: `mvn spring-boot:run`.
+3. Ejecute: `mvn spring-boot:run`.
 
-Flyway aplicará automáticamente la migración inicial al arrancar. Las credenciales no deben subirse a Git.
+Spring Boot carga automáticamente las variables locales de `.env`; no hace falta exportarlas manualmente en la terminal. Flyway aplicará automáticamente la migración inicial al arrancar. Las credenciales no deben subirse a Git.
 
 La API permite solicitudes CORS desde `http://localhost:4200` por defecto. Para otro origen local, cambie `CORS_ALLOWED_ORIGINS` en su archivo `.env`.
 
@@ -36,6 +35,8 @@ La API permite solicitudes CORS desde `http://localhost:4200` por defecto. Para 
 4. Con la API y PostgreSQL levantados, ejecute en orden: **Health**, **Registrar usuario** (o **Iniciar sesión**), **Crear tarea** y el resto de solicitudes.
 
 La colección guarda automáticamente `accessToken`, `taskId` y `reminderId` para las solicitudes siguientes. No suba valores reales de token o contraseñas al repositorio.
+
+Para revisar casos de error, ejecute la carpeta **Errores esperados**: un correo registrado responde `409`, una contraseña incorrecta al iniciar sesión responde `401` y los campos inválidos responden `400` con el detalle del campo que se debe corregir.
 
 ## Arquitectura
 
