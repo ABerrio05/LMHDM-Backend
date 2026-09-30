@@ -9,6 +9,9 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,33 +25,45 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/spaces")
+@Tag(name = "Espacios colaborativos", description = "Espacios, integrantes y tareas compartidas")
+@SecurityRequirement(name = "bearerAuth")
 public class CollaborativeSpaceController {
     private final CollaborativeSpaceUseCase spaces;
     public CollaborativeSpaceController(CollaborativeSpaceUseCase spaces) { this.spaces = spaces; }
 
     @PostMapping
+    @Operation(summary = "Crear espacio colaborativo")
     public ResponseEntity<CollaborativeSpace> create(@AuthenticationPrincipal Long userId,
                                                        @Valid @RequestBody CreateSpaceRequest request) {
         CollaborativeSpace created = spaces.create(userId,
                 new CollaborativeSpaceUseCase.CreateSpaceCommand(request.name(), request.description()));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
-    @GetMapping public List<CollaborativeSpace> list(@AuthenticationPrincipal Long userId) { return spaces.listMine(userId); }
-    @GetMapping("/{spaceId}") public CollaborativeSpace get(@AuthenticationPrincipal Long userId, @PathVariable Long spaceId) {
+    @GetMapping
+    @Operation(summary = "Listar mis espacios")
+    public List<CollaborativeSpace> list(@AuthenticationPrincipal Long userId) { return spaces.listMine(userId); }
+    @GetMapping("/{spaceId}")
+    @Operation(summary = "Consultar espacio")
+    public CollaborativeSpace get(@AuthenticationPrincipal Long userId, @PathVariable Long spaceId) {
         return spaces.get(userId, spaceId);
     }
     @PostMapping("/{spaceId}/members")
+    @Operation(summary = "Invitar integrante")
     public ResponseEntity<SpaceMember> invite(@AuthenticationPrincipal Long userId, @PathVariable Long spaceId,
                                                @Valid @RequestBody InviteMemberRequest request) {
         SpaceMember member = spaces.invite(userId, spaceId,
                 new CollaborativeSpaceUseCase.InviteMemberCommand(request.email(), request.role()));
         return ResponseEntity.status(HttpStatus.CREATED).body(member);
     }
-    @GetMapping("/{spaceId}/members") public List<SpaceMember> members(@AuthenticationPrincipal Long userId,
+    @GetMapping("/{spaceId}/members")
+    @Operation(summary = "Listar integrantes")
+    public List<SpaceMember> members(@AuthenticationPrincipal Long userId,
                                                                           @PathVariable Long spaceId) {
         return spaces.listMembers(userId, spaceId);
     }
-    @GetMapping("/{spaceId}/tasks") public List<Task> tasks(@AuthenticationPrincipal Long userId, @PathVariable Long spaceId) {
+    @GetMapping("/{spaceId}/tasks")
+    @Operation(summary = "Listar tareas de un espacio")
+    public List<Task> tasks(@AuthenticationPrincipal Long userId, @PathVariable Long spaceId) {
         return spaces.listTasks(userId, spaceId);
     }
 
