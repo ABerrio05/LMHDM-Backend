@@ -27,6 +27,16 @@ La API permite solicitudes CORS desde `http://localhost:4200` por defecto. Para 
 - `POST` y `GET /api/tasks/{taskId}/reminders`, `PUT` y `DELETE /api/reminders/{id}`: CRUD de recordatorios asociados a una tarea propia.
 - `POST` y `GET /api/spaces`, `GET /api/spaces/{id}`, `POST` y `GET /api/spaces/{id}/members`, `GET /api/spaces/{id}/tasks`: espacios colaborativos, invitaciones por correo y tareas compartidas.
 
+## Documentación Swagger / OpenAPI
+
+Con el backend iniciado, abre la documentación interactiva en:
+
+```text
+http://localhost:8080/swagger-ui/index.html
+```
+
+Swagger agrupa las rutas por funcionalidad y permite probarlas. Para los grupos protegidos, primero ejecuta **Iniciar sesión**, copia el valor de `accessToken` y pégalo en **Authorize** como token Bearer. La especificación JSON está disponible en `GET /v3/api-docs`.
+
 ## Pruebas con Postman
 
 1. Importe `postman/NEXO.postman_collection.json` y `postman/NEXO.local.postman_environment.json` en Postman.
