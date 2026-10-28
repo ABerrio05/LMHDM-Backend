@@ -9,6 +9,9 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
@@ -25,6 +28,7 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+          cache-dependency-path: Backend/pom.xml
 
       - name: Ejecutar pruebas y generar cobertura
         run: mvn --batch-mode clean verify
@@ -43,5 +47,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-backend-report
-          path: target/site/jacoco/
+          path: Backend/target/site/jacoco/
           if-no-files-found: warn
