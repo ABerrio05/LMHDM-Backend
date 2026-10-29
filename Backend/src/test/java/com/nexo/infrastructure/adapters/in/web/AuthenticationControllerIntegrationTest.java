@@ -18,7 +18,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 /** Prueba de integración de la capa HTTP: petición JSON, validación y respuesta del endpoint. */
-@WebMvcTest(AuthenticationController.class)
+@WebMvcTest(
+        value = AuthenticationController.class,
+        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration")
 @AutoConfigureMockMvc(addFilters = false)
 class AuthenticationControllerIntegrationTest {
     @Autowired private MockMvc mockMvc;

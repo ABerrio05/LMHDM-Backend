@@ -16,7 +16,7 @@ class SecurityConfigTest {
 
     @Test
     void hashesPasswordsWithBcrypt() {
-        PasswordEncoder encoder = configuration.passwordEncoder();
+        PasswordEncoder encoder = configuration.passwordEncoder(10);
         String rawPassword = "ClaveSegura123";
 
         String hash = encoder.encode(rawPassword);

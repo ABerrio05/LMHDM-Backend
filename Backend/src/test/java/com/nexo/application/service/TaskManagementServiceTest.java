@@ -1,6 +1,7 @@
 package com.nexo.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.nexo.application.ports.in.TaskManagementUseCase.CreateTaskCommand;
 import com.nexo.application.ports.out.TaskRepositoryPort;
@@ -24,6 +25,38 @@ class TaskManagementServiceTest {
 
         assertEquals(7L, result.ownerId());
         assertEquals(Task.TaskStatus.PENDIENTE, result.status());
+    }
+
+    @Test
+    void rejectsCreationInSpaceWhenUserIsNotAMember() {
+        TaskRepositoryPort repository = new InMemoryTaskRepository(new ArrayList<>());
+        SpaceMemberRepositoryPort members = new InMemoryMemberRepository();
+        TaskManagementService service = new TaskManagementService(repository, members);
+
+        assertThrows(TaskManagementService.TaskAccessDeniedException.class,
+                () -> service.create(7L, new CreateTaskCommand("Privada", "", null, Task.Priority.MEDIA, 15L)));
+    }
+
+    @Test
+    void preventsAnotherUserFromReadingOrDeletingATask() {
+        List<Task> saved = new ArrayList<>();
+        TaskManagementService service = new TaskManagementService(new InMemoryTaskRepository(saved), new InMemoryMemberRepository());
+        Task created = service.create(7L, new CreateTaskCommand("Propia", "", null, Task.Priority.BAJA, null));
+
+        assertThrows(TaskManagementService.TaskAccessDeniedException.class, () -> service.getMine(8L, created.id()));
+        assertThrows(TaskManagementService.TaskAccessDeniedException.class, () -> service.delete(8L, created.id()));
+    }
+
+    @Test
+    void changesOnlyTheStatusOfAnOwnedTask() {
+        List<Task> saved = new ArrayList<>();
+        TaskManagementService service = new TaskManagementService(new InMemoryTaskRepository(saved), new InMemoryMemberRepository());
+        Task created = service.create(7L, new CreateTaskCommand("Preparar pruebas", "", null, Task.Priority.ALTA, null));
+
+        Task completed = service.changeStatus(7L, created.id(), Task.TaskStatus.COMPLETADA);
+
+        assertEquals(Task.TaskStatus.COMPLETADA, completed.status());
+        assertEquals("Preparar pruebas", completed.title());
     }
 
     private static class InMemoryTaskRepository implements TaskRepositoryPort {

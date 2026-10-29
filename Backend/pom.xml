@@ -19,8 +19,9 @@
 
     <properties>
         <java.version>21</java.version>
-        <sonar.projectKey>nexo-backend</sonar.projectKey>
-        <sonar.projectName>NEXO Backend</sonar.projectName>
+        <sonar.organization>aberrio05</sonar.organization>
+        <sonar.projectKey>ABerrio05_LMHDM-Backend</sonar.projectKey>
+        <sonar.projectName>LMHDM Backend</sonar.projectName>
         <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
