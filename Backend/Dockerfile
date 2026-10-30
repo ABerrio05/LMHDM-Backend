@@ -5,7 +5,9 @@ WORKDIR /workspace
 
 COPY pom.xml ./
 COPY src ./src
-RUN mvn -B -ntp package -DskipTests
+# Las descargas de dependencias pueden sufrir cortes transitorios en redes locales.
+# Maven reintenta antes de dar por fallida una construcción reproducible.
+RUN mvn -B -ntp -Dmaven.wagon.http.retryHandler.count=5 package -DskipTests
 
 # Imagen final mínima: solo JRE y el artefacto ejecutable.
 FROM eclipse-temurin:21-jre-alpine
