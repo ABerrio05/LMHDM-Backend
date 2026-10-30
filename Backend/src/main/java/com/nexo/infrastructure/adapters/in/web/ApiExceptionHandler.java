@@ -9,6 +9,9 @@ import com.nexo.application.service.CollaborativeSpaceService.SpaceAccessDeniedE
 import com.nexo.application.service.CollaborativeSpaceService.SpaceNotFoundException;
 import com.nexo.application.service.CollaborativeSpaceService.UserNotFoundException;
 import com.nexo.application.service.CollaborativeSpaceService.MemberAlreadyExistsException;
+import com.nexo.infrastructure.adapters.out.calendar.NagerDateHolidayClient.HolidayProviderUnavailableException;
+import com.nexo.application.service.NoteManagementService.NoteAccessDeniedException;
+import com.nexo.application.service.NoteManagementService.NoteNotFoundException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -41,6 +44,14 @@ public class ApiExceptionHandler {
     ResponseEntity<Map<String, String>> userNotFound() { return error(HttpStatus.NOT_FOUND, "Usuario no encontrado"); }
     @ExceptionHandler(MemberAlreadyExistsException.class)
     ResponseEntity<Map<String, String>> memberAlreadyExists() { return error(HttpStatus.CONFLICT, "El usuario ya pertenece al espacio"); }
+    @ExceptionHandler(HolidayProviderUnavailableException.class)
+    ResponseEntity<Map<String, String>> holidayProviderUnavailable() {
+        return error(HttpStatus.SERVICE_UNAVAILABLE, "El calendario externo no está disponible. Intenta nuevamente.");
+    }
+    @ExceptionHandler(NoteNotFoundException.class)
+    ResponseEntity<Map<String, String>> noteNotFound() { return error(HttpStatus.NOT_FOUND, "Nota no encontrada"); }
+    @ExceptionHandler(NoteAccessDeniedException.class)
+    ResponseEntity<Map<String, String>> noteAccessDenied() { return error(HttpStatus.FORBIDDEN, "No tienes acceso a esta nota"); }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<Map<String, Object>> validationError(MethodArgumentNotValidException exception) {
         Map<String, String> errors = new LinkedHashMap<>();
