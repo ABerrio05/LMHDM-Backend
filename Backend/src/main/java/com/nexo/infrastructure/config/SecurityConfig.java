@@ -32,6 +32,15 @@ import com.nexo.application.ports.out.CollaborativeSpaceRepositoryPort;
 import com.nexo.application.ports.out.SpaceMemberRepositoryPort;
 import com.nexo.application.service.CollaborativeSpaceService;
 import com.nexo.infrastructure.adapters.in.web.JwtAuthenticationFilter;
+import com.nexo.application.ports.in.HolidayCalendarUseCase;
+import com.nexo.application.ports.out.HolidayCalendarProviderPort;
+import com.nexo.application.service.HolidayCalendarService;
+import com.nexo.application.ports.in.NoteManagementUseCase;
+import com.nexo.application.ports.out.PersonalNoteRepositoryPort;
+import com.nexo.application.service.NoteManagementService;
+import com.nexo.application.ports.in.AuditLogUseCase;
+import com.nexo.application.ports.out.AuditLogRepositoryPort;
+import com.nexo.application.service.AuditLogService;
 
 @Configuration
 @EnableWebSecurity
@@ -51,7 +60,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
+    PasswordEncoder passwordEncoder(@Value("${app.security.bcrypt-strength:10}") int bcryptStrength) {
+        return new BCryptPasswordEncoder(bcryptStrength);
+    }
 
     @Bean
     CorsConfigurationSource corsConfigurationSource(@Value("${app.cors.allowed-origins}") String allowedOrigins) {
@@ -88,5 +99,20 @@ public class SecurityConfig {
                                                          SpaceMemberRepositoryPort members, UserRepositoryPort users,
                                                          TaskRepositoryPort tasks) {
         return new CollaborativeSpaceService(spaces, members, users, tasks);
+    }
+
+    @Bean
+    HolidayCalendarUseCase holidayCalendarUseCase(HolidayCalendarProviderPort holidayProvider) {
+        return new HolidayCalendarService(holidayProvider);
+    }
+
+    @Bean
+    NoteManagementUseCase noteManagementUseCase(PersonalNoteRepositoryPort notes) {
+        return new NoteManagementService(notes);
+    }
+
+    @Bean
+    AuditLogUseCase auditLogUseCase(AuditLogRepositoryPort auditLogs) {
+        return new AuditLogService(auditLogs);
     }
 }

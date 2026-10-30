@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.nexo.application.ports.in.AuthenticationUseCase;
+import com.nexo.application.ports.in.AuditLogUseCase;
 import com.nexo.application.ports.out.TokenProviderPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +19,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 /** Prueba de integración de la capa HTTP: petición JSON, validación y respuesta del endpoint. */
-@WebMvcTest(AuthenticationController.class)
+@WebMvcTest(
+        value = AuthenticationController.class,
+        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration")
 @AutoConfigureMockMvc(addFilters = false)
 class AuthenticationControllerIntegrationTest {
     @Autowired private MockMvc mockMvc;
     @MockBean private AuthenticationUseCase authentication;
+    @MockBean private AuditLogUseCase auditLogs;
     @MockBean private TokenProviderPort tokenProvider;
 
     @Test

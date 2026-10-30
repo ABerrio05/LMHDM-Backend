@@ -14,6 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    public static final String AUTHENTICATED_USER_ID = "nexo.authenticatedUserId";
     private final TokenProviderPort tokenProvider;
 
     public JwtAuthenticationFilter(TokenProviderPort tokenProvider) { this.tokenProvider = tokenProvider; }
@@ -23,8 +24,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
-            tokenProvider.parse(header.substring(7)).ifPresent(user -> SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(user.userId(), null, List.of())));
+            tokenProvider.parse(header.substring(7)).ifPresent(user -> {
+                request.setAttribute(AUTHENTICATED_USER_ID, user.userId());
+                SecurityContextHolder.getContext().setAuthentication(
+                        new UsernamePasswordAuthenticationToken(user.userId(), null, List.of()));
+            });
         }
         chain.doFilter(request, response);
     }

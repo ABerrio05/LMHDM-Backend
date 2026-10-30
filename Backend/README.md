@@ -11,8 +11,20 @@ API REST para NEXO, construida con Spring Boot, PostgreSQL y arquitectura hexago
 ## Puesta en marcha local
 
 1. Copie `.env.example` a `.env` y reemplace `JWT_SECRET`.
-2. Inicie PostgreSQL local o, si Docker está disponible: `docker compose --env-file .env up -d`.
+2. Para iniciar solo la base de datos localmente, ejecute: `docker compose --env-file .env up -d postgres`.
 3. Ejecute: `mvn spring-boot:run`.
+
+## Ejecución con Docker
+
+Este directorio incluye un `Dockerfile` multi-etapa y un `docker-compose.yml` para ejecutar PostgreSQL y el backend sin instalar Maven ni Java en el host:
+
+```powershell
+Copy-Item .env.example .env
+# Actualiza DB_PASSWORD y JWT_SECRET en .env.
+docker compose up --build
+```
+
+La API estará disponible en `http://localhost:8080/api/health`. Para levantar también el frontend junto con la base de datos y el backend, usa el `docker-compose.yml` ubicado en la raíz del proyecto NEXO.
 
 Spring Boot carga automáticamente las variables locales de `.env`; no hace falta exportarlas manualmente en la terminal. Flyway aplicará automáticamente la migración inicial al arrancar. Las credenciales no deben subirse a Git.
 

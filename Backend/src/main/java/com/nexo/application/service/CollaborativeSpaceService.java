@@ -11,9 +11,12 @@ import com.nexo.domain.model.Task;
 import com.nexo.domain.model.User;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Casos de uso para compartir listas de tareas sin depender de HTTP ni JPA. */
 public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
+    private static final Logger log = LoggerFactory.getLogger(CollaborativeSpaceService.class);
     private final CollaborativeSpaceRepositoryPort spaces;
     private final SpaceMemberRepositoryPort members;
     private final UserRepositoryPort users;
@@ -27,6 +30,7 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
     @Override public CollaborativeSpace create(Long userId, CreateSpaceCommand command) {
         CollaborativeSpace space = spaces.save(new CollaborativeSpace(null, command.name(), command.description(), userId, LocalDateTime.now()));
         members.save(new SpaceMember(null, space.id(), userId, SpaceMember.Role.ADMINISTRADOR, LocalDateTime.now()));
+        log.info("space_created spaceId={} creatorId={}", space.id(), userId);
         return space;
     }
 
@@ -45,7 +49,10 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
         if (members.findBySpaceIdAndUserId(spaceId, invitedUser.id()).isPresent()) {
             throw new MemberAlreadyExistsException();
         }
-        return members.save(new SpaceMember(null, spaceId, invitedUser.id(), command.role(), LocalDateTime.now()));
+        SpaceMember member = members.save(new SpaceMember(null, spaceId, invitedUser.id(), command.role(), LocalDateTime.now()));
+        log.info("space_member_invited spaceId={} invitedUserId={} role={} requestedBy={}", spaceId,
+                invitedUser.id(), command.role(), userId);
+        return member;
     }
 
     @Override public List<SpaceMember> listMembers(Long userId, Long spaceId) {
