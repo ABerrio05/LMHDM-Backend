@@ -38,6 +38,9 @@ import com.nexo.application.service.HolidayCalendarService;
 import com.nexo.application.ports.in.NoteManagementUseCase;
 import com.nexo.application.ports.out.PersonalNoteRepositoryPort;
 import com.nexo.application.service.NoteManagementService;
+import com.nexo.application.ports.in.AuditLogUseCase;
+import com.nexo.application.ports.out.AuditLogRepositoryPort;
+import com.nexo.application.service.AuditLogService;
 
 @Configuration
 @EnableWebSecurity
@@ -106,5 +109,10 @@ public class SecurityConfig {
     @Bean
     NoteManagementUseCase noteManagementUseCase(PersonalNoteRepositoryPort notes) {
         return new NoteManagementService(notes);
+    }
+
+    @Bean
+    AuditLogUseCase auditLogUseCase(AuditLogRepositoryPort auditLogs) {
+        return new AuditLogService(auditLogs);
     }
 }
