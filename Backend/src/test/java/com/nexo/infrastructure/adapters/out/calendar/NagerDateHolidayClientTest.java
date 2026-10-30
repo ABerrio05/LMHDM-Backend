@@ -8,7 +8,11 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +51,58 @@ class NagerDateHolidayClientTest {
 
         assertThrows(NagerDateHolidayClient.HolidayProviderUnavailableException.class,
                 () -> client.findUpcomingHolidays("CO"));
+    }
+
+    @Test
+    void reusesTheCachedResponseWithoutCallingTheExternalProviderAgain() throws Exception {
+        AtomicInteger requests = new AtomicInteger();
+        server.createContext("/NextPublicHolidays/CO", exchange -> {
+            requests.incrementAndGet();
+            respond(exchange, 200,
+                    "[{\"date\":\"2026-01-01\",\"localName\":\"Año Nuevo\",\"countryCode\":\"CO\"}]");
+        });
+        NagerDateHolidayClient client = new NagerDateHolidayClient(baseUrl());
+
+        List<PublicHoliday> firstResult = client.findUpcomingHolidays("CO");
+        List<PublicHoliday> cachedResult = client.findUpcomingHolidays("CO");
+
+        assertEquals(firstResult, cachedResult);
+        assertEquals(1, requests.get());
+    }
+
+    @Test
+    void mapsAnEmptyExternalResponseToAnEmptyHolidayList() throws Exception {
+        server.createContext("/NextPublicHolidays/CO", exchange -> respond(exchange, 200, "null"));
+        NagerDateHolidayClient client = new NagerDateHolidayClient(baseUrl());
+
+        List<PublicHoliday> holidays = client.findUpcomingHolidays("CO");
+
+        assertEquals(List.of(), holidays);
+    }
+
+    @Test
+    void returnsStaleCachedHolidaysWhenTheProviderBecomesUnavailable() throws Exception {
+        server.createContext("/NextPublicHolidays/CO", exchange -> respond(exchange, 503, "unavailable"));
+        NagerDateHolidayClient client = new NagerDateHolidayClient(baseUrl());
+        List<PublicHoliday> cachedHolidays = List.of(
+                new PublicHoliday(java.time.LocalDate.of(2026, 1, 1), "Año Nuevo", "CO"));
+        putExpiredCacheEntry(client, "CO", cachedHolidays);
+
+        List<PublicHoliday> holidays = client.findUpcomingHolidays("CO");
+
+        assertEquals(cachedHolidays, holidays);
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static void putExpiredCacheEntry(NagerDateHolidayClient client, String countryCode,
+            List<PublicHoliday> holidays) throws Exception {
+        Field cacheField = NagerDateHolidayClient.class.getDeclaredField("cache");
+        cacheField.setAccessible(true);
+        Class<?> cacheEntryType = Class.forName(NagerDateHolidayClient.class.getName() + "$CachedHolidays");
+        Constructor<?> constructor = cacheEntryType.getDeclaredConstructor(List.class, long.class);
+        constructor.setAccessible(true);
+        Object expiredEntry = constructor.newInstance(holidays, 0L);
+        ((Map) cacheField.get(client)).put(countryCode, expiredEntry);
     }
 
     private String baseUrl() {
