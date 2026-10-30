@@ -24,11 +24,14 @@ El criterio es menos de 5 % de errores HTTP y p95 inferior a 1,5 segundos.
 
 ## Sin instalar k6
 
-Con NEXO ejecutándose mediante Docker Compose, desde esta carpeta:
+Con NEXO ejecutándose mediante Docker Compose, k6 debe unirse a la red
+`nexo_default`. En algunos equipos Docker no resuelve el alias del servicio desde
+un contenedor externo; por ello se obtiene primero la IP actual del backend:
 
 ```powershell
-Get-Content load-tasks.js | docker run --rm -i grafana/k6 run -e BASE_URL=http://host.docker.internal:8080 -
-Get-Content stress-tasks.js | docker run --rm -i grafana/k6 run -e BASE_URL=http://host.docker.internal:8080 -
+$backendIp = (docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" nexo-backend-1).Trim()
+docker run --rm --network nexo_default -v "${PWD}:/scripts" grafana/k6 run -e BASE_URL="http://${backendIp}:8080" /scripts/load-tasks.js
+docker run --rm --network nexo_default -v "${PWD}:/scripts" grafana/k6 run -e BASE_URL="http://${backendIp}:8080" /scripts/stress-tasks.js
 ```
 
 Guarda la salida final de cada prueba; debe incluir `http_req_failed` y `http_req_duration`.
