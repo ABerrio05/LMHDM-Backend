@@ -60,6 +60,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     }
 
     private boolean isAuditableApiRequest(String path) {
-        return path.startsWith("/api/") && !path.equals("/api/health") && !path.startsWith("/api/audit-logs");
+        return path.startsWith("/api/") && !path.equals("/api/health")
+                && !path.startsWith("/api/developer/audit-logs");
     }
 }

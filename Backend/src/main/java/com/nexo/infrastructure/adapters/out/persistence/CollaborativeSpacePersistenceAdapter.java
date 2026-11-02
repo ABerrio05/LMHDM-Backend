@@ -11,10 +11,16 @@ public class CollaborativeSpacePersistenceAdapter implements CollaborativeSpaceR
     private final SpringDataCollaborativeSpaceRepository repository;
     public CollaborativeSpacePersistenceAdapter(SpringDataCollaborativeSpaceRepository repository) { this.repository = repository; }
     @Override public CollaborativeSpace save(CollaborativeSpace space) {
+        if (space.id() != null) {
+            CollaborativeSpaceJpaEntity existing = repository.findById(space.id()).orElseThrow();
+            existing.update(space.name(), space.description());
+            return toDomain(repository.save(existing));
+        }
         CollaborativeSpaceJpaEntity saved = repository.save(new CollaborativeSpaceJpaEntity(
                 space.name(), space.description(), space.creatorId(), space.createdAt()));
         return toDomain(saved);
     }
+    @Override public void deleteById(Long spaceId) { repository.deleteById(spaceId); }
     @Override public Optional<CollaborativeSpace> findById(Long spaceId) { return repository.findById(spaceId).map(this::toDomain); }
     @Override public List<CollaborativeSpace> findAllByIds(List<Long> spaceIds) {
         if (spaceIds.isEmpty()) return List.of();

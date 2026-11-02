@@ -3,7 +3,10 @@ package com.nexo.domain.model;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-public record Reminder(Long id, LocalDateTime scheduledAt, String message, Long taskId) {
+public record Reminder(Long id, LocalDateTime scheduledAt, String message, Long taskId, Long recurrenceId) {
+    public Reminder(Long id, LocalDateTime scheduledAt, String message, Long taskId) {
+        this(id, scheduledAt, message, taskId, null);
+    }
     public Reminder {
         Objects.requireNonNull(scheduledAt, "La fecha del recordatorio es obligatoria");
         Objects.requireNonNull(message, "El mensaje es obligatorio");

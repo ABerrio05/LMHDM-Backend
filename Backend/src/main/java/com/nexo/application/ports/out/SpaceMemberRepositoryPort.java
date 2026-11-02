@@ -9,4 +9,5 @@ public interface SpaceMemberRepositoryPort {
     Optional<SpaceMember> findBySpaceIdAndUserId(Long spaceId, Long userId);
     List<SpaceMember> findAllBySpaceId(Long spaceId);
     List<SpaceMember> findAllByUserId(Long userId);
+    void deleteAllBySpaceId(Long spaceId);
 }

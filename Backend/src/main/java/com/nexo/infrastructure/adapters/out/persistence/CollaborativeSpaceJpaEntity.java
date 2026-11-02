@@ -26,4 +26,5 @@ public class CollaborativeSpaceJpaEntity {
     String getDescription() { return description; }
     Long getCreatorId() { return creatorId; }
     LocalDateTime getCreatedAt() { return createdAt; }
+    void update(String name, String description) { this.name = name; this.description = description; }
 }

@@ -19,12 +19,16 @@ Flyway crea y versiona el esquema de PostgreSQL. Para pruebas locales sin Docker
 
 El flujo es: Angular/Postman → controlador REST → puerto de entrada → servicio de aplicación → puerto de salida → adaptador JPA → PostgreSQL.
 
-## Funcionalidades disponibles para el comité
+## Funcionalidades disponibles
 
 - Registro e inicio de sesión seguro con BCrypt y JWT.
 - CRUD de tareas con prioridad y estado.
-- CRUD de recordatorios vinculados a tareas.
+- CRUD de recordatorios vinculados a tareas, recurrencias y entrega por correo mediante SMTP/Mailpit.
+- Notas personales con CRUD protegido por JWT.
 - Espacios colaborativos: crear espacio, invitar usuarios registrados por correo, asignar roles y consultar tareas compartidas.
+- Planificación con consulta de festivos de Colombia mediante la API externa Nager.Date; la llamada externa ocurre en el backend.
+- Auditoría de solicitudes y panel técnico para el usuario desarrollador: consulta de actividad, métricas de notificaciones y administración de cuentas.
+- Asistente de planificación: funciona con sugerencias locales y puede conectarse a un proveedor compatible con OpenAI cuando se configuren `AI_ENABLED`, `AI_BASE_URL`, `AI_API_KEY` y `AI_MODEL`.
 
 La colección de demostración está en `Backend/postman/NEXO.postman_collection.json`. Importe también el entorno `NEXO.local.postman_environment.json`.
 
@@ -34,13 +38,25 @@ La colección de demostración está en `Backend/postman/NEXO.postman_collection
 - Los identificadores de las tablas se manejan como `BIGINT` para que correspondan con `Long` en Java. Flyway conserva las ocho tablas y relaciones requeridas por el modelo de datos.
 - Los valores de prioridad, estado y rol se validan como enumeraciones de dominio; no se aceptan valores arbitrarios desde la API.
 - La integración remota entre los dos computadores se resuelve temporalmente mediante un túnel HTTPS de ngrok. Las credenciales, JWT y la URL temporal no se versionan.
-- En este primer incremento se completaron autenticación, tareas, recordatorios y colaboración. Notas, recurrencias, envío real de notificaciones y panel administrativo permanecen priorizados en [BACKLOG.md](BACKLOG.md) para los siguientes sprints.
+- La IA externa no se habilita por defecto: se requiere una clave válida de un proveedor compatible. Sin esa clave el asistente conserva sugerencias locales, dejando explícito que no se está usando un modelo remoto.
+- Los registros técnicos no incluyen contraseñas, tokens ni cuerpos de formularios. El acceso se limita al rol de desarrollador.
 
 ## Evidencia de calidad
 
-- `mvn test` ejecuta pruebas unitarias de dominio y servicios, y una prueba HTTP de integración del registro.
+- `mvn test` ejecuta pruebas unitarias de dominio y servicios, pruebas de integración HTTP y pruebas de los flujos de recordatorios, auditoría, calendario y recuperación de acceso.
 - GitHub Actions ejecuta esas pruebas al enviar cambios a `Desarrollo`, `Pre-produccion` o `main`.
 - La colección de Postman tiene aserciones automáticas y puede ejecutarse en orden para demostrar el flujo de autenticación, tareas y recordatorios.
+
+## Servicios de Docker
+
+Desde la raíz del proyecto se puede iniciar el conjunto con `docker compose up --build`.
+
+- Frontend: `http://localhost:4200`.
+- API y Swagger: `http://localhost:8080/api/health` y `http://localhost:8080/swagger-ui/index.html`.
+- PostgreSQL: puerto local `5433`.
+- Mailpit (buzón de pruebas): `http://localhost:8025`.
+
+Las credenciales y variables sensibles se declaran en `.env`; nunca deben incluirse en Git.
 
 ## Integración Angular
 

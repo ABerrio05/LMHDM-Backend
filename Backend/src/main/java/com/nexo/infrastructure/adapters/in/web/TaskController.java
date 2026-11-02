@@ -4,12 +4,16 @@ import com.nexo.application.ports.in.TaskManagementUseCase;
 import com.nexo.domain.model.Task;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import com.nexo.domain.model.Recurrence;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +40,8 @@ public class TaskController {
     @Operation(summary = "Crear tarea")
     public ResponseEntity<Task> create(@AuthenticationPrincipal Long userId, @Valid @RequestBody TaskRequest request) {
         Task task = tasks.create(userId, new TaskManagementUseCase.CreateTaskCommand(request.title(), request.description(),
-                request.dueDate(), request.priority(), request.spaceId()));
+                request.dueDate(), request.priority(), request.spaceId(), request.recurrenceFrequency(),
+                request.recurrenceInterval(), request.recurrenceEndDate()));
         return ResponseEntity.status(HttpStatus.CREATED).body(task);
     }
     @GetMapping
@@ -65,6 +70,13 @@ public class TaskController {
     }
 
     public record TaskRequest(@NotBlank @Size(max = 255) String title, String description, LocalDateTime dueDate,
-                              @NotNull Task.Priority priority, Long spaceId) { }
+                              @NotNull Task.Priority priority, Long spaceId,
+                              Recurrence.Frequency recurrenceFrequency,
+                              @Min(1) @Max(365) Integer recurrenceInterval,
+                              LocalDate recurrenceEndDate) {
+        public TaskRequest(String title, String description, LocalDateTime dueDate, Task.Priority priority, Long spaceId) {
+            this(title, description, dueDate, priority, spaceId, null, null, null);
+        }
+    }
     public record StatusRequest(@NotNull Task.TaskStatus status) { }
 }

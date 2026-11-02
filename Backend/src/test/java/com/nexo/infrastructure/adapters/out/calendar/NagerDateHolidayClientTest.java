@@ -33,7 +33,7 @@ class NagerDateHolidayClientTest {
 
     @Test
     void mapsTheExternalHolidayResponseToTheDomain() throws Exception {
-        server.createContext("/NextPublicHolidays/CO", exchange -> respond(exchange, 200,
+        server.createContext("/api/v3/NextPublicHolidays/CO", exchange -> respond(exchange, 200,
                 "[{\"date\":\"2026-01-01\",\"localName\":\"Año Nuevo\",\"countryCode\":\"CO\"}]"));
         NagerDateHolidayClient client = new NagerDateHolidayClient(baseUrl());
 
@@ -46,7 +46,7 @@ class NagerDateHolidayClientTest {
 
     @Test
     void translatesAnUnavailableProviderToTheApplicationException() {
-        server.createContext("/NextPublicHolidays/CO", exchange -> respond(exchange, 503, "unavailable"));
+        server.createContext("/api/v3/NextPublicHolidays/CO", exchange -> respond(exchange, 503, "unavailable"));
         NagerDateHolidayClient client = new NagerDateHolidayClient(baseUrl());
 
         assertThrows(NagerDateHolidayClient.HolidayProviderUnavailableException.class,
@@ -56,7 +56,7 @@ class NagerDateHolidayClientTest {
     @Test
     void reusesTheCachedResponseWithoutCallingTheExternalProviderAgain() throws Exception {
         AtomicInteger requests = new AtomicInteger();
-        server.createContext("/NextPublicHolidays/CO", exchange -> {
+        server.createContext("/api/v3/NextPublicHolidays/CO", exchange -> {
             requests.incrementAndGet();
             respond(exchange, 200,
                     "[{\"date\":\"2026-01-01\",\"localName\":\"Año Nuevo\",\"countryCode\":\"CO\"}]");
@@ -72,7 +72,7 @@ class NagerDateHolidayClientTest {
 
     @Test
     void mapsAnEmptyExternalResponseToAnEmptyHolidayList() throws Exception {
-        server.createContext("/NextPublicHolidays/CO", exchange -> respond(exchange, 200, "null"));
+        server.createContext("/api/v3/NextPublicHolidays/CO", exchange -> respond(exchange, 200, "null"));
         NagerDateHolidayClient client = new NagerDateHolidayClient(baseUrl());
 
         List<PublicHoliday> holidays = client.findUpcomingHolidays("CO");
@@ -82,7 +82,7 @@ class NagerDateHolidayClientTest {
 
     @Test
     void returnsStaleCachedHolidaysWhenTheProviderBecomesUnavailable() throws Exception {
-        server.createContext("/NextPublicHolidays/CO", exchange -> respond(exchange, 503, "unavailable"));
+        server.createContext("/api/v3/NextPublicHolidays/CO", exchange -> respond(exchange, 503, "unavailable"));
         NagerDateHolidayClient client = new NagerDateHolidayClient(baseUrl());
         List<PublicHoliday> cachedHolidays = List.of(
                 new PublicHoliday(java.time.LocalDate.of(2026, 1, 1), "Año Nuevo", "CO"));
@@ -106,7 +106,7 @@ class NagerDateHolidayClientTest {
     }
 
     private String baseUrl() {
-        return "http://localhost:" + server.getAddress().getPort();
+        return "http://localhost:" + server.getAddress().getPort() + "/api/v3";
     }
 
     private static void respond(com.sun.net.httpserver.HttpExchange exchange, int status, String body) throws IOException {

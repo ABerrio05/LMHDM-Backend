@@ -17,8 +17,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,6 +48,19 @@ public class CollaborativeSpaceController {
     @Operation(summary = "Consultar espacio")
     public CollaborativeSpace get(@AuthenticationPrincipal Long userId, @PathVariable Long spaceId) {
         return spaces.get(userId, spaceId);
+    }
+    @PutMapping("/{spaceId}")
+    @Operation(summary = "Editar espacio colaborativo")
+    public CollaborativeSpace update(@AuthenticationPrincipal Long userId, @PathVariable Long spaceId,
+                                     @Valid @RequestBody CreateSpaceRequest request) {
+        return spaces.update(userId, spaceId,
+                new CollaborativeSpaceUseCase.UpdateSpaceCommand(request.name(), request.description()));
+    }
+    @DeleteMapping("/{spaceId}")
+    @Operation(summary = "Eliminar espacio y conservar sus tareas como personales")
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal Long userId, @PathVariable Long spaceId) {
+        spaces.delete(userId, spaceId);
+        return ResponseEntity.noContent().build();
     }
     @PostMapping("/{spaceId}/members")
     @Operation(summary = "Invitar integrante")

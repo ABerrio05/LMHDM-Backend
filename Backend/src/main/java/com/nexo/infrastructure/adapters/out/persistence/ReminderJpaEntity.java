@@ -15,16 +15,19 @@ public class ReminderJpaEntity {
     @Column(name = "fecha_hora", nullable = false) private LocalDateTime scheduledAt;
     @Column(name = "mensaje", nullable = false) private String message;
     @Column(name = "id_tarea", nullable = false) private Long taskId;
+    @Column(name = "id_recurrencia") private Long recurrenceId;
     protected ReminderJpaEntity() { }
-    public ReminderJpaEntity(LocalDateTime scheduledAt, String message, Long taskId) {
-        this.scheduledAt = scheduledAt; this.message = message; this.taskId = taskId;
+    public ReminderJpaEntity(LocalDateTime scheduledAt, String message, Long taskId, Long recurrenceId) {
+        this.scheduledAt = scheduledAt; this.message = message; this.taskId = taskId; this.recurrenceId = recurrenceId;
     }
     public Long getId() { return id; }
     public LocalDateTime getScheduledAt() { return scheduledAt; }
     public String getMessage() { return message; }
     public Long getTaskId() { return taskId; }
-    public void update(LocalDateTime scheduledAt, String message) {
+    public Long getRecurrenceId() { return recurrenceId; }
+    public void update(LocalDateTime scheduledAt, String message, Long recurrenceId) {
         this.scheduledAt = scheduledAt;
         this.message = message;
+        this.recurrenceId = recurrenceId;
     }
 }

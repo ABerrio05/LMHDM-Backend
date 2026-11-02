@@ -89,6 +89,7 @@ class ReminderManagementServiceTest {
 
         @Override public List<Reminder> findAllByTaskId(Long taskId) { return data.stream().filter(item -> item.taskId().equals(taskId)).toList(); }
         @Override public Optional<Reminder> findById(Long reminderId) { return data.stream().filter(item -> item.id().equals(reminderId)).findFirst(); }
+        @Override public List<Reminder> findDueBeforeOrAt(LocalDateTime dateTime) { return data.stream().filter(item -> !item.scheduledAt().isAfter(dateTime)).toList(); }
         @Override public void delete(Reminder reminder) { data.removeIf(item -> item.id().equals(reminder.id())); }
         int count() { return data.size(); }
     }

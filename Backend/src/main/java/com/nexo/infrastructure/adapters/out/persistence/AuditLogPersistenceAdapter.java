@@ -23,6 +23,11 @@ public class AuditLogPersistenceAdapter implements AuditLogRepositoryPort {
         return repository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, limit)).stream().map(this::toDomain).toList();
     }
 
+    @Override
+    public List<AuditLog> findRecent(int limit) {
+        return repository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, limit)).stream().map(this::toDomain).toList();
+    }
+
     private AuditLog toDomain(AuditLogJpaEntity entity) {
         return new AuditLog(entity.getId(), entity.getUserId(), entity.getAction(), entity.getMethod(), entity.getPath(),
                 entity.getStatusCode(), entity.getDurationMs(), entity.getRequestId(), entity.getCreatedAt());

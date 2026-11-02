@@ -2,6 +2,7 @@ package com.nexo.infrastructure.adapters.out.calendar;
 
 import com.nexo.application.ports.out.HolidayCalendarProviderPort;
 import com.nexo.domain.model.PublicHoliday;
+import java.net.URI;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /** Adaptador HTTP para Nager.Date. Mantiene el proveedor externo fuera de la capa de aplicación. */
 @Component
@@ -22,13 +24,15 @@ public class NagerDateHolidayClient implements HolidayCalendarProviderPort {
     private static final Logger log = LoggerFactory.getLogger(NagerDateHolidayClient.class);
     private static final Duration CACHE_TTL = Duration.ofHours(12);
     private final RestClient client;
+    private final String providerBaseUrl;
     private final Map<String, CachedHolidays> cache = new ConcurrentHashMap<>();
 
     public NagerDateHolidayClient(@Value("${app.calendar.base-url:https://date.nager.at/api/v3}") String baseUrl) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofSeconds(5));
         requestFactory.setReadTimeout(Duration.ofSeconds(10));
-        this.client = RestClient.builder().baseUrl(baseUrl).requestFactory(requestFactory).build();
+        this.client = RestClient.builder().requestFactory(requestFactory).build();
+        this.providerBaseUrl = baseUrl.replaceAll("/+$", "");
     }
 
     @Override
@@ -40,8 +44,14 @@ public class NagerDateHolidayClient implements HolidayCalendarProviderPort {
             return cached.holidays();
         }
         try {
+            URI requestUri = UriComponentsBuilder.fromUriString(providerBaseUrl)
+                    .pathSegment("NextPublicHolidays", countryCode)
+                    .build()
+                    .toUri();
             NagerHoliday[] response = client.get()
-                    .uri("/NextPublicHolidays/{countryCode}", countryCode)
+                    // Construimos la URL completa: RestClient puede descartar /api/v3
+                    // al resolver una ruta relativa contra una base sin barra final.
+                    .uri(requestUri)
                     .retrieve()
                     .body(NagerHoliday[].class);
             List<PublicHoliday> holidays = Arrays.stream(response == null ? new NagerHoliday[0] : response)

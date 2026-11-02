@@ -25,6 +25,7 @@ public class SpaceMemberPersistenceAdapter implements SpaceMemberRepositoryPort 
         return repository.findAllBySpaceIdOrderByJoinedAtAsc(spaceId).stream().map(this::toDomain).toList();
     }
     @Override public List<SpaceMember> findAllByUserId(Long userId) { return repository.findAllByUserId(userId).stream().map(this::toDomain).toList(); }
+    @Override public void deleteAllBySpaceId(Long spaceId) { repository.deleteAllBySpaceId(spaceId); }
     private SpaceMember toDomain(SpaceMemberJpaEntity entity) {
         return new SpaceMember(entity.getId(), entity.getSpaceId(), entity.getUserId(),
                 SpaceMember.Role.valueOf(entity.getRole().toUpperCase(Locale.ROOT)), entity.getJoinedAt());

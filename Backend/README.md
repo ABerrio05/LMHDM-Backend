@@ -35,9 +35,46 @@ La API permite solicitudes CORS desde `http://localhost:4200` por defecto. Para 
 - `GET /api/health`: verifica que la API está disponible.
 - `POST /api/auth/register`: registra un usuario y devuelve un token JWT.
 - `POST /api/auth/login`: autentica un usuario y devuelve un token JWT.
-- `POST /api/tasks`, `GET /api/tasks`, `GET /api/tasks/{id}`, `PUT /api/tasks/{id}`, `PATCH /api/tasks/{id}/status` y `DELETE /api/tasks/{id}`: CRUD protegido de tareas.
+- `POST /api/tasks`, `GET /api/tasks`, `GET /api/tasks/{id}`, `PUT /api/tasks/{id}`, `PATCH /api/tasks/{id}/status` y `DELETE /api/tasks/{id}`: CRUD protegido de tareas. Al crear una tarea se puede indicar una recurrencia diaria, semanal o personalizada; al completarla se genera la siguiente ocurrencia dentro del límite configurado.
 - `POST` y `GET /api/tasks/{taskId}/reminders`, `PUT` y `DELETE /api/reminders/{id}`: CRUD de recordatorios asociados a una tarea propia.
 - `POST` y `GET /api/spaces`, `GET /api/spaces/{id}`, `POST` y `GET /api/spaces/{id}/members`, `GET /api/spaces/{id}/tasks`: espacios colaborativos, invitaciones por correo y tareas compartidas.
+- `GET /api/calendar/holidays/colombia`: consulta los próximos festivos de Colombia mediante la API externa Nager.Date. La llamada se hace desde el backend y mantiene una caché temporal para evitar solicitudes repetidas.
+- `POST /api/assistant/suggestions`: genera una recomendación con IA usando únicamente el contexto de las tareas pendientes del usuario autenticado.
+- `GET /api/developer/audit-logs`: consulta de auditoría exclusiva para el usuario configurado como desarrollador. Los registros no exponen contraseñas, tokens ni cuerpos de formularios.
+
+## Configuración de funciones externas
+
+### Asistente de IA
+
+El asistente está desactivado por defecto para que la aplicación pueda iniciar sin una clave de un proveedor externo. Para habilitarlo, completa estas variables únicamente en `.env`:
+
+```text
+AI_ENABLED=true
+AI_BASE_URL=https://api.openai.com/v1
+AI_API_KEY=tu_clave_del_proveedor
+AI_MODEL=gpt-4o-mini
+```
+
+El proveedor debe ser compatible con el endpoint `POST /chat/completions`. La clave se usa solo dentro del backend y nunca se entrega al navegador.
+
+### Notificaciones de recordatorios por correo
+
+Los recordatorios se revisan periódicamente y cada entrega queda registrada para impedir correos duplicados. Para enviar correos reales, configura un proveedor SMTP en `.env`:
+
+```text
+EMAIL_ENABLED=true
+EMAIL_FROM=notificaciones@tu-dominio.com
+MAIL_HOST=smtp.tu-proveedor.com
+MAIL_PORT=587
+MAIL_USERNAME=tu_usuario_smtp
+MAIL_PASSWORD=tu_app_password
+```
+
+Con `EMAIL_ENABLED=false`, el sistema conserva el comportamiento local y no intenta enviar mensajes. Los datos SMTP y la clave de IA son secretos: no se incluyen en Git ni en el frontend.
+
+### Auditoría para desarrollador
+
+Define `APP_DEVELOPER_EMAIL` con la cuenta que administrará la plataforma. Al registrarse o iniciar sesión con ese correo, el backend asigna el rol `DEVELOPER`; el resto de usuarios conserva el rol `USER` y no puede acceder a los logs. La interfaz correspondiente está en `/developer/logs`.
 
 ## Documentación Swagger / OpenAPI
 

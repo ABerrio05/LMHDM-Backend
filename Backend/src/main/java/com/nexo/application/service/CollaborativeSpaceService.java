@@ -43,6 +43,24 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
         return spaces.findById(spaceId).orElseThrow(SpaceNotFoundException::new);
     }
 
+    @Override public CollaborativeSpace update(Long userId, Long spaceId, UpdateSpaceCommand command) {
+        requireAdministrator(userId, spaceId);
+        CollaborativeSpace current = spaces.findById(spaceId).orElseThrow(SpaceNotFoundException::new);
+        CollaborativeSpace updated = spaces.save(new CollaborativeSpace(current.id(), command.name(), command.description(),
+                current.creatorId(), current.createdAt()));
+        log.info("space_updated spaceId={} requestedBy={}", spaceId, userId);
+        return updated;
+    }
+
+    @Override public void delete(Long userId, Long spaceId) {
+        requireAdministrator(userId, spaceId);
+        tasks.findAllBySpaceId(spaceId).forEach(task -> tasks.save(new Task(task.id(), task.title(), task.description(),
+                task.dueDate(), task.priority(), task.status(), task.ownerId(), null, task.recurrenceId())));
+        members.deleteAllBySpaceId(spaceId);
+        spaces.deleteById(spaceId);
+        log.info("space_deleted spaceId={} requestedBy={}", spaceId, userId);
+    }
+
     @Override public SpaceMember invite(Long userId, Long spaceId, InviteMemberCommand command) {
         requireAdministrator(userId, spaceId);
         User invitedUser = users.findByEmail(command.email()).orElseThrow(UserNotFoundException::new);

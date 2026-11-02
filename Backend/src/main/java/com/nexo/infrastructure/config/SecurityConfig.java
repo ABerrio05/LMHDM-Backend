@@ -23,9 +23,11 @@ import com.nexo.application.ports.out.UserRepositoryPort;
 import com.nexo.application.service.AuthenticationService;
 import com.nexo.application.ports.in.TaskManagementUseCase;
 import com.nexo.application.ports.out.TaskRepositoryPort;
+import com.nexo.application.ports.out.RecurrenceRepositoryPort;
 import com.nexo.application.service.TaskManagementService;
 import com.nexo.application.ports.in.ReminderManagementUseCase;
 import com.nexo.application.ports.out.ReminderRepositoryPort;
+import com.nexo.application.ports.out.EmailNotificationRepositoryPort;
 import com.nexo.application.service.ReminderManagementService;
 import com.nexo.application.ports.in.CollaborativeSpaceUseCase;
 import com.nexo.application.ports.out.CollaborativeSpaceRepositoryPort;
@@ -41,6 +43,9 @@ import com.nexo.application.service.NoteManagementService;
 import com.nexo.application.ports.in.AuditLogUseCase;
 import com.nexo.application.ports.out.AuditLogRepositoryPort;
 import com.nexo.application.service.AuditLogService;
+import com.nexo.application.ports.in.TaskAssistantUseCase;
+import com.nexo.application.ports.out.TaskAssistantProviderPort;
+import com.nexo.application.service.TaskAssistantService;
 
 @Configuration
 @EnableWebSecurity
@@ -54,6 +59,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/health", "/api/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
                         .permitAll()
+                        .requestMatchers("/api/developer/**").hasRole("DEVELOPER")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
@@ -80,18 +86,22 @@ public class SecurityConfig {
 
     @Bean
     AuthenticationUseCase authenticationUseCase(UserRepositoryPort users, PasswordHasherPort passwordHasher,
-                                                TokenProviderPort tokenProvider) {
-        return new AuthenticationService(users, passwordHasher, tokenProvider);
+                                                TokenProviderPort tokenProvider,
+                                                @Value("${app.developer.email:}") String developerEmail) {
+        return new AuthenticationService(users, passwordHasher, tokenProvider, developerEmail);
     }
 
     @Bean
-    TaskManagementUseCase taskManagementUseCase(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members) {
-        return new TaskManagementService(tasks, members);
+    TaskManagementUseCase taskManagementUseCase(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members,
+                                                RecurrenceRepositoryPort recurrences) {
+        return new TaskManagementService(tasks, members, recurrences);
     }
 
     @Bean
-    ReminderManagementUseCase reminderManagementUseCase(ReminderRepositoryPort reminders, TaskRepositoryPort tasks) {
-        return new ReminderManagementService(reminders, tasks);
+    ReminderManagementUseCase reminderManagementUseCase(ReminderRepositoryPort reminders, TaskRepositoryPort tasks,
+                                                         EmailNotificationRepositoryPort notifications,
+                                                         RecurrenceRepositoryPort recurrences) {
+        return new ReminderManagementService(reminders, tasks, notifications, recurrences);
     }
 
     @Bean
@@ -114,5 +124,10 @@ public class SecurityConfig {
     @Bean
     AuditLogUseCase auditLogUseCase(AuditLogRepositoryPort auditLogs) {
         return new AuditLogService(auditLogs);
+    }
+
+    @Bean
+    TaskAssistantUseCase taskAssistantUseCase(TaskRepositoryPort tasks, TaskAssistantProviderPort provider) {
+        return new TaskAssistantService(tasks, provider);
     }
 }

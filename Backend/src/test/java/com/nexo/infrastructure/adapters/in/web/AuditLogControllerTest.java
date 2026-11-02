@@ -13,14 +13,14 @@ import org.junit.jupiter.api.Test;
 
 class AuditLogControllerTest {
     @Test
-    void returnsOnlyTheHistoryRequestedForTheAuthenticatedUser() {
+    void returnsRecentPlatformHistoryForTheDeveloperInterface() {
         AuditLogUseCase useCase = mock(AuditLogUseCase.class);
         AuditLog entry = new AuditLog(1L, 8L, "PATCH /api/tasks/3/status", "PATCH", "/api/tasks/3/status",
                 200, 15L, "request-3", LocalDateTime.now());
-        when(useCase.listMine(8L, 25)).thenReturn(List.of(entry));
+        when(useCase.listPlatform(25)).thenReturn(List.of(entry));
         AuditLogController controller = new AuditLogController(useCase);
 
-        assertEquals(List.of(entry), controller.listMine(8L, 25));
-        verify(useCase).listMine(8L, 25);
+        assertEquals(List.of(entry), controller.listPlatform(25));
+        verify(useCase).listPlatform(25);
     }
 }

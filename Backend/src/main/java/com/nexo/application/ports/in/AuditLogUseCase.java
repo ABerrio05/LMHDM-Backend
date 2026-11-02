@@ -6,4 +6,5 @@ import java.util.List;
 public interface AuditLogUseCase {
     void record(Long userId, String action, String method, String path, int statusCode, long durationMs, String requestId);
     List<AuditLog> listMine(Long userId, int limit);
+    List<AuditLog> listPlatform(int limit);
 }

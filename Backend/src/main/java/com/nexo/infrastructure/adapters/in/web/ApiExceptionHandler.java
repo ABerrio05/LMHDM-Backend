@@ -2,6 +2,8 @@ package com.nexo.infrastructure.adapters.in.web;
 
 import com.nexo.application.service.AuthenticationService.EmailAlreadyRegisteredException;
 import com.nexo.application.service.AuthenticationService.InvalidCredentialsException;
+import com.nexo.application.service.AuthenticationService.AccountInactiveException;
+import com.nexo.application.service.PlatformUserManagementService.PlatformUserNotFoundException;
 import com.nexo.application.service.TaskManagementService.TaskAccessDeniedException;
 import com.nexo.application.service.TaskManagementService.TaskNotFoundException;
 import com.nexo.application.service.ReminderManagementService.ReminderNotFoundException;
@@ -12,6 +14,7 @@ import com.nexo.application.service.CollaborativeSpaceService.MemberAlreadyExist
 import com.nexo.infrastructure.adapters.out.calendar.NagerDateHolidayClient.HolidayProviderUnavailableException;
 import com.nexo.application.service.NoteManagementService.NoteAccessDeniedException;
 import com.nexo.application.service.NoteManagementService.NoteNotFoundException;
+import com.nexo.infrastructure.adapters.out.ai.OpenAiCompatibleTaskAssistant.TaskAssistantUnavailableException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -30,6 +33,12 @@ public class ApiExceptionHandler {
     ResponseEntity<Map<String, String>> invalidCredentials() {
         return error(HttpStatus.UNAUTHORIZED, "Correo o contraseña inválidos");
     }
+    @ExceptionHandler(AccountInactiveException.class)
+    ResponseEntity<Map<String, String>> accountInactive() {
+        return error(HttpStatus.FORBIDDEN, "Esta cuenta está desactivada. Contacta al administrador.");
+    }
+    @ExceptionHandler(PlatformUserNotFoundException.class)
+    ResponseEntity<Map<String, String>> platformUserNotFound() { return error(HttpStatus.NOT_FOUND, "Usuario no encontrado"); }
     @ExceptionHandler(TaskNotFoundException.class)
     ResponseEntity<Map<String, String>> taskNotFound() { return error(HttpStatus.NOT_FOUND, "Tarea no encontrada"); }
     @ExceptionHandler(TaskAccessDeniedException.class)
@@ -52,6 +61,10 @@ public class ApiExceptionHandler {
     ResponseEntity<Map<String, String>> noteNotFound() { return error(HttpStatus.NOT_FOUND, "Nota no encontrada"); }
     @ExceptionHandler(NoteAccessDeniedException.class)
     ResponseEntity<Map<String, String>> noteAccessDenied() { return error(HttpStatus.FORBIDDEN, "No tienes acceso a esta nota"); }
+    @ExceptionHandler(TaskAssistantUnavailableException.class)
+    ResponseEntity<Map<String, String>> assistantUnavailable() {
+        return error(HttpStatus.SERVICE_UNAVAILABLE, "El asistente de IA no está disponible. Intenta nuevamente.");
+    }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<Map<String, Object>> validationError(MethodArgumentNotValidException exception) {
         Map<String, String> errors = new LinkedHashMap<>();

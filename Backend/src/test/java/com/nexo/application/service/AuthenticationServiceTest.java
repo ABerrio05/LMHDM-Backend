@@ -10,6 +10,7 @@ import com.nexo.application.ports.out.PasswordHasherPort;
 import com.nexo.application.ports.out.TokenProviderPort;
 import com.nexo.application.ports.out.UserRepositoryPort;
 import com.nexo.domain.model.User;
+import com.nexo.domain.model.UserRole;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -89,9 +90,14 @@ class AuthenticationServiceTest {
         }
 
         @Override
+        public Optional<User> findById(Long userId) {
+            return users.values().stream().filter(user -> user.id().equals(userId)).findFirst();
+        }
+
+        @Override
         public User save(User user) {
             User saved = new User(user.id() == null ? nextId++ : user.id(), user.name(), user.email(),
-                    user.passwordHash(), user.registeredAt() == null ? LocalDateTime.now() : user.registeredAt());
+                    user.passwordHash(), user.registeredAt() == null ? LocalDateTime.now() : user.registeredAt(), user.role());
             users.put(saved.email(), saved);
             return saved;
         }
@@ -115,7 +121,7 @@ class AuthenticationServiceTest {
 
     private static final class FakeTokenProvider implements TokenProviderPort {
         @Override
-        public String createToken(Long userId, String email) {
+        public String createToken(Long userId, String email, UserRole role) {
             return "token-" + userId;
         }
 

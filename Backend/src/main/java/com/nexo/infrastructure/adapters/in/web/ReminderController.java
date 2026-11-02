@@ -4,12 +4,16 @@ import com.nexo.application.ports.in.ReminderManagementUseCase;
 import com.nexo.domain.model.Reminder;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import com.nexo.domain.model.Recurrence;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +40,8 @@ public class ReminderController {
     public ResponseEntity<Reminder> create(@AuthenticationPrincipal Long userId, @PathVariable Long taskId,
                                            @Valid @RequestBody ReminderRequest request) {
         Reminder reminder = reminders.create(userId, taskId,
-                new ReminderManagementUseCase.CreateReminderCommand(request.scheduledAt(), request.message()));
+                new ReminderManagementUseCase.CreateReminderCommand(request.scheduledAt(), request.message(),
+                        request.recurrenceFrequency(), request.recurrenceInterval(), request.recurrenceEndDate()));
         return ResponseEntity.status(HttpStatus.CREATED).body(reminder);
     }
     @GetMapping("/tasks/{taskId}/reminders")
@@ -56,5 +61,8 @@ public class ReminderController {
     public ResponseEntity<Void> delete(@AuthenticationPrincipal Long userId, @PathVariable Long reminderId) {
         reminders.delete(userId, reminderId); return ResponseEntity.noContent().build();
     }
-    public record ReminderRequest(@NotNull LocalDateTime scheduledAt, @NotBlank @Size(max = 500) String message) { }
+    public record ReminderRequest(@NotNull LocalDateTime scheduledAt, @NotBlank @Size(max = 500) String message,
+                                  Recurrence.Frequency recurrenceFrequency,
+                                  @Min(1) @Max(365) Integer recurrenceInterval,
+                                  LocalDate recurrenceEndDate) { }
 }

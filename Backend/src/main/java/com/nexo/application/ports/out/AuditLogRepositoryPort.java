@@ -6,4 +6,5 @@ import java.util.List;
 public interface AuditLogRepositoryPort {
     AuditLog save(AuditLog auditLog);
     List<AuditLog> findRecentByUserId(Long userId, int limit);
+    List<AuditLog> findRecent(int limit);
 }

@@ -22,4 +22,9 @@ public class AuditLogService implements AuditLogUseCase {
     public List<AuditLog> listMine(Long userId, int limit) {
         return auditLogs.findRecentByUserId(userId, Math.min(Math.max(limit, 1), MAX_LIMIT));
     }
+
+    @Override
+    public List<AuditLog> listPlatform(int limit) {
+        return auditLogs.findRecent(Math.min(Math.max(limit, 1), MAX_LIMIT));
+    }
 }

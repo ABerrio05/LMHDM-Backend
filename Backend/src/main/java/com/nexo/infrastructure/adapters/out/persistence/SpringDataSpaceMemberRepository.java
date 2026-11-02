@@ -8,4 +8,5 @@ interface SpringDataSpaceMemberRepository extends JpaRepository<SpaceMemberJpaEn
     Optional<SpaceMemberJpaEntity> findBySpaceIdAndUserId(Long spaceId, Long userId);
     List<SpaceMemberJpaEntity> findAllBySpaceIdOrderByJoinedAtAsc(Long spaceId);
     List<SpaceMemberJpaEntity> findAllByUserId(Long userId);
+    void deleteAllBySpaceId(Long spaceId);
 }

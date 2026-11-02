@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.nexo.application.ports.in.AuditLogUseCase;
 import jakarta.servlet.http.HttpServletResponse;
@@ -49,5 +50,15 @@ class RequestLoggingFilterTest {
 
         verify(auditLogs).record(eq(9L), eq("POST /api/tasks"), eq("POST"), eq("/api/tasks"),
                 eq(200), anyLong(), org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    void doesNotAuditTheDeveloperAuditLogEndpoint() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/developer/audit-logs");
+        request.setAttribute(JwtAuthenticationFilter.AUTHENTICATED_USER_ID, 9L);
+
+        filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+
+        verifyNoInteractions(auditLogs);
     }
 }

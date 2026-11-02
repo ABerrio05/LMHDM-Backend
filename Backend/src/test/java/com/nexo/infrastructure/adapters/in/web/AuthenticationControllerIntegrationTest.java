@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.nexo.application.ports.in.AuthenticationUseCase;
 import com.nexo.application.ports.in.AuditLogUseCase;
 import com.nexo.application.ports.out.TokenProviderPort;
+import com.nexo.domain.model.UserRole;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -32,7 +33,7 @@ class AuthenticationControllerIntegrationTest {
     @Test
     void registersUserThroughHttpEndpoint() throws Exception {
         when(authentication.register(any())).thenReturn(
-                new AuthenticationUseCase.AuthenticationResult(15L, "Ana", "ana@nexo.test", "jwt-de-prueba"));
+                new AuthenticationUseCase.AuthenticationResult(15L, "Ana", "ana@nexo.test", UserRole.USER, "jwt-de-prueba"));
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)

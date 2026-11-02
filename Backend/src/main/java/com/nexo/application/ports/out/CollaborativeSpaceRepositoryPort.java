@@ -8,4 +8,5 @@ public interface CollaborativeSpaceRepositoryPort {
     CollaborativeSpace save(CollaborativeSpace space);
     Optional<CollaborativeSpace> findById(Long spaceId);
     List<CollaborativeSpace> findAllByIds(List<Long> spaceIds);
+    void deleteById(Long spaceId);
 }

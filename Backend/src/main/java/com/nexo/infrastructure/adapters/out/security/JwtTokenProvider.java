@@ -1,6 +1,7 @@
 package com.nexo.infrastructure.adapters.out.security;
 
 import com.nexo.application.ports.out.TokenProviderPort;
+import com.nexo.domain.model.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.JwtException;
@@ -24,9 +25,9 @@ public class JwtTokenProvider implements TokenProviderPort {
     }
 
     @Override
-    public String createToken(Long userId, String email) {
+    public String createToken(Long userId, String email, UserRole role) {
         Date now = new Date();
-        return Jwts.builder().subject(userId.toString()).claim("email", email).issuedAt(now)
+        return Jwts.builder().subject(userId.toString()).claim("email", email).claim("role", role.name()).issuedAt(now)
                 .expiration(new Date(now.getTime() + expirationMs)).signWith(key).compact();
     }
 
@@ -34,7 +35,9 @@ public class JwtTokenProvider implements TokenProviderPort {
     public Optional<AuthenticatedUser> parse(String token) {
         try {
             Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
-            return Optional.of(new AuthenticatedUser(Long.valueOf(claims.getSubject()), claims.get("email", String.class)));
+            String role = claims.get("role", String.class);
+            return Optional.of(new AuthenticatedUser(Long.valueOf(claims.getSubject()), claims.get("email", String.class),
+                    role == null ? UserRole.USER : UserRole.valueOf(role)));
         } catch (JwtException | IllegalArgumentException exception) {
             return Optional.empty();
         }
