@@ -7,6 +7,7 @@ import com.nexo.domain.model.AssistantActionProposal;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -70,7 +71,7 @@ public class OpenAiCompatibleTaskAssistant implements TaskAssistantProviderPort 
                 "model", model,
                 "temperature", 0.3,
                 "messages", List.of(
-                        Map.of("role", "system", "content", "Eres el asistente de productividad de NEXO. Responde exclusivamente JSON válido, sin markdown: {\"answer\":\"respuesta breve en español\",\"proposedActions\":[{\"type\":\"TASK_CREATE, NOTE_CREATE, TASK_UPDATE, NOTE_UPDATE, TASK_DELETE o NOTE_DELETE\",\"targetId\":123 o null,\"title\":\"texto\",\"description\":\"texto\",\"dueDate\":\"YYYY-MM-DD o vacío\",\"priority\":\"ALTA, MEDIA o BAJA\"}]}. Para editar o eliminar usa obligatoriamente el ID del elemento incluido en el contexto. Propón acciones solo si el usuario pide crear, editar, actualizar, eliminar o borrar. Nunca inventes IDs o fechas."),
+                        Map.of("role", "system", "content", "Eres el asistente de productividad de NEXO. Responde exclusivamente JSON válido, sin markdown: {\"answer\":\"respuesta breve en español\",\"proposedActions\":[{\"type\":\"TASK_CREATE, NOTE_CREATE, TASK_UPDATE, NOTE_UPDATE, TASK_DELETE o NOTE_DELETE\",\"targetId\":123 o null,\"title\":\"texto\",\"description\":\"texto\",\"dueDate\":\"YYYY-MM-DD o vacío\",\"priority\":\"ALTA, MEDIA o BAJA\"}]}. Las acciones son PROPUESTAS: nunca afirmes que creaste, editaste o eliminaste algo; di que quedará listo al confirmarlo el usuario. Para editar o eliminar usa obligatoriamente el ID exacto del elemento incluido en el contexto. Una petición de eliminar debe producir solo *_DELETE; una de editar/actualizar solo *_UPDATE; una de crear solo *_CREATE. Propón acciones solo si el usuario pide crear, editar, actualizar, eliminar o borrar. Nunca inventes IDs, títulos ni fechas."),
                         Map.of("role", "user", "content",
                                 "Consulta: " + question + "\n\nTareas actuales:\n" + context)));
         for (int attempt = 1; attempt <= MAX_PROVIDER_ATTEMPTS; attempt++) {
@@ -80,7 +81,7 @@ public class OpenAiCompatibleTaskAssistant implements TaskAssistantProviderPort 
             JsonNode root = mapper.readTree(response);
             String content = root.path("choices").path(0).path("message").path("content").asText();
             if (content.isBlank()) throw new IllegalStateException("El proveedor no devolvió una respuesta útil");
-            return parseAssistantResponse(content);
+            return filterActionsForQuestion(question, parseAssistantResponse(content));
             } catch (RestClientResponseException exception) {
                 if (!isTransientProviderError(exception) || attempt == MAX_PROVIDER_ATTEMPTS) {
                     throw new TaskAssistantUnavailableException();
@@ -114,6 +115,20 @@ public class OpenAiCompatibleTaskAssistant implements TaskAssistantProviderPort 
         } catch (Exception ignored) {
             return new AssistantResponse(content.trim(), List.of());
         }
+    }
+
+    /** Evita ejecutar una acción de otro tipo si el modelo no siguió la instrucción. */
+    private AssistantResponse filterActionsForQuestion(String question, AssistantResponse response) {
+        String normalized = question.toLowerCase(java.util.Locale.ROOT);
+        Set<String> allowedOperations = new java.util.HashSet<>();
+        if (normalized.matches(".*(elimina|eliminar|eliminen|borra|borrar|quita|quitar).*")) allowedOperations.add("DELETE");
+        if (normalized.matches(".*(edita|editar|actualiza|actualizar|modifica|modificar|cambia|cambiar).*")) allowedOperations.add("UPDATE");
+        if (normalized.matches(".*(crea|crear|agrega|agregar|añade|añadir|nueva|nuevo).*")) allowedOperations.add("CREATE");
+        if (allowedOperations.isEmpty()) return new AssistantResponse(response.answer(), List.of());
+        List<AssistantActionProposal> safeActions = response.proposedActions().stream()
+                .filter(action -> allowedOperations.stream().anyMatch(operation -> action.type().name().endsWith(operation)))
+                .toList();
+        return new AssistantResponse(response.answer(), safeActions);
     }
 
     private boolean isTransientProviderError(RestClientResponseException exception) {
