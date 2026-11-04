@@ -127,7 +127,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    TaskAssistantUseCase taskAssistantUseCase(TaskRepositoryPort tasks, TaskAssistantProviderPort provider) {
-        return new TaskAssistantService(tasks, provider);
+    TaskAssistantUseCase taskAssistantUseCase(TaskRepositoryPort tasks, PersonalNoteRepositoryPort notes,
+                                              TaskAssistantProviderPort provider) {
+        return new TaskAssistantService(tasks, notes, provider);
     }
 }

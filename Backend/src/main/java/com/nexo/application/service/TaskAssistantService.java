@@ -3,6 +3,8 @@ package com.nexo.application.service;
 import com.nexo.application.ports.in.TaskAssistantUseCase;
 import com.nexo.application.ports.out.TaskAssistantProviderPort;
 import com.nexo.application.ports.out.TaskRepositoryPort;
+import com.nexo.application.ports.out.PersonalNoteRepositoryPort;
+import com.nexo.domain.model.PersonalNote;
 import com.nexo.domain.model.Task;
 import com.nexo.domain.model.TaskAssistantSuggestion;
 import com.nexo.domain.model.AssistantActionProposal;
@@ -18,20 +20,24 @@ public class TaskAssistantService implements TaskAssistantUseCase {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private final TaskRepositoryPort tasks;
     private final TaskAssistantProviderPort provider;
+    private final PersonalNoteRepositoryPort notes;
 
-    public TaskAssistantService(TaskRepositoryPort tasks, TaskAssistantProviderPort provider) {
+    public TaskAssistantService(TaskRepositoryPort tasks, PersonalNoteRepositoryPort notes, TaskAssistantProviderPort provider) {
         this.tasks = tasks;
+        this.notes = notes;
         this.provider = provider;
     }
 
     @Override
     public TaskAssistantSuggestion suggest(Long userId, String question) {
-        List<Task> pending = tasks.findAllByOwnerId(userId).stream()
-                .filter(task -> task.status() != Task.TaskStatus.COMPLETADA)
+        List<Task> userTasks = tasks.findAllByOwnerId(userId).stream()
                 .sorted(Comparator.comparing(Task::dueDate, Comparator.nullsLast(Comparator.naturalOrder())))
-                .limit(12)
+                .limit(20)
                 .toList();
-        List<String> context = pending.stream().map(this::summarize).toList();
+        List<Task> pending = userTasks.stream().filter(task -> task.status() != Task.TaskStatus.COMPLETADA).toList();
+        List<String> context = new java.util.ArrayList<>();
+        userTasks.forEach(task -> context.add(summarize(task)));
+        notes.findAllByOwnerId(userId).stream().limit(20).forEach(note -> context.add(summarize(note)));
 
         if (!provider.isConfigured()) {
             log.info("assistant_requested_without_provider userId={} pendingTasks={}", userId, pending.size());
@@ -47,7 +53,11 @@ public class TaskAssistantService implements TaskAssistantUseCase {
 
     private String summarize(Task task) {
         String due = task.dueDate() == null ? "sin fecha" : task.dueDate().format(DATE);
-        return "Tarea: " + task.title() + " | prioridad: " + task.priority() + " | vence: " + due;
+        return "TAREA id=" + task.id() + ": " + task.title() + " | prioridad: " + task.priority() + " | estado: " + task.status() + " | vence: " + due;
+    }
+
+    private String summarize(PersonalNote note) {
+        return "NOTA id=" + note.id() + ": " + note.title() + " | contenido: " + note.content();
     }
 
     private List<String> localActions(List<Task> pending) {

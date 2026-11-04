@@ -70,7 +70,7 @@ public class OpenAiCompatibleTaskAssistant implements TaskAssistantProviderPort 
                 "model", model,
                 "temperature", 0.3,
                 "messages", List.of(
-                        Map.of("role", "system", "content", "Eres el asistente de productividad de NEXO. Responde exclusivamente JSON válido, sin markdown: {\"answer\":\"respuesta breve en español\",\"proposedActions\":[{\"type\":\"TASK o NOTE\",\"title\":\"texto\",\"description\":\"texto\",\"dueDate\":\"YYYY-MM-DD o vacío\",\"priority\":\"ALTA, MEDIA o BAJA\"}]}. Propón acciones solo si el usuario pide crear o guardar algo. No inventes fechas."),
+                        Map.of("role", "system", "content", "Eres el asistente de productividad de NEXO. Responde exclusivamente JSON válido, sin markdown: {\"answer\":\"respuesta breve en español\",\"proposedActions\":[{\"type\":\"TASK_CREATE, NOTE_CREATE, TASK_UPDATE, NOTE_UPDATE, TASK_DELETE o NOTE_DELETE\",\"targetId\":123 o null,\"title\":\"texto\",\"description\":\"texto\",\"dueDate\":\"YYYY-MM-DD o vacío\",\"priority\":\"ALTA, MEDIA o BAJA\"}]}. Para editar o eliminar usa obligatoriamente el ID del elemento incluido en el contexto. Propón acciones solo si el usuario pide crear, editar, actualizar, eliminar o borrar. Nunca inventes IDs o fechas."),
                         Map.of("role", "user", "content",
                                 "Consulta: " + question + "\n\nTareas actuales:\n" + context)));
         for (int attempt = 1; attempt <= MAX_PROVIDER_ATTEMPTS; attempt++) {
@@ -105,6 +105,7 @@ public class OpenAiCompatibleTaskAssistant implements TaskAssistantProviderPort 
                 try {
                     actions.add(new AssistantActionProposal(
                             AssistantActionProposal.Type.valueOf(action.path("type").asText().toUpperCase()),
+                            action.path("targetId").isIntegralNumber() ? action.path("targetId").asLong() : null,
                             action.path("title").asText(), action.path("description").asText(),
                             action.path("dueDate").asText(), action.path("priority").asText()));
                 } catch (IllegalArgumentException ignored) { }

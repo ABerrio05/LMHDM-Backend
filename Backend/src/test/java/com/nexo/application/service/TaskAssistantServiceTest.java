@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.nexo.application.ports.out.TaskAssistantProviderPort;
 import com.nexo.application.ports.out.TaskRepositoryPort;
+import com.nexo.application.ports.out.PersonalNoteRepositoryPort;
+import com.nexo.domain.model.PersonalNote;
 import com.nexo.domain.model.Task;
 import com.nexo.domain.model.TaskAssistantSuggestion;
 import java.time.LocalDateTime;
@@ -17,7 +19,7 @@ class TaskAssistantServiceTest {
     @Test
     void returnsHelpfulSetupMessageWithoutCallingProviderWhenAiIsNotConfigured() {
         CapturingProvider provider = new CapturingProvider(false, "no debería usarse");
-        TaskAssistantService service = new TaskAssistantService(new FixedTaskRepository(List.of(pendingTask())), provider);
+        TaskAssistantService service = new TaskAssistantService(new FixedTaskRepository(List.of(pendingTask())), new FixedNoteRepository(), provider);
 
         TaskAssistantSuggestion suggestion = service.suggest(7L, "¿Qué debo priorizar?");
 
@@ -34,7 +36,7 @@ class TaskAssistantServiceTest {
         Task completed = new Task(2L, "Ya terminada", "", null, Task.Priority.BAJA,
                 Task.TaskStatus.COMPLETADA, 7L, null, null);
         TaskAssistantService service = new TaskAssistantService(
-                new FixedTaskRepository(List.of(pendingTask(), completed)), provider);
+                new FixedTaskRepository(List.of(pendingTask(), completed)), new FixedNoteRepository(), provider);
 
         TaskAssistantSuggestion suggestion = service.suggest(7L, "¿Qué debo priorizar?");
 
@@ -59,6 +61,13 @@ class TaskAssistantServiceTest {
         @Override public List<Task> findAllBySpaceId(Long spaceId) { return List.of(); }
         @Override public Optional<Task> findById(Long taskId) { return Optional.empty(); }
         @Override public void delete(Task task) { }
+    }
+
+    private static final class FixedNoteRepository implements PersonalNoteRepositoryPort {
+        @Override public PersonalNote save(PersonalNote note) { throw new UnsupportedOperationException(); }
+        @Override public List<PersonalNote> findAllByOwnerId(Long ownerId) { return List.of(); }
+        @Override public Optional<PersonalNote> findById(Long noteId) { return Optional.empty(); }
+        @Override public void delete(PersonalNote note) { }
     }
 
     private static final class CapturingProvider implements TaskAssistantProviderPort {
