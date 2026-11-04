@@ -39,6 +39,8 @@ server:
 
 app:
   frontend-url: ${APP_FRONTEND_URL:http://localhost:4200}
+  invitations:
+    cleanup-delay-ms: ${INVITATION_CLEANUP_DELAY_MS:3600000}
   developer:
     email: ${APP_DEVELOPER_EMAIL:}
   security:

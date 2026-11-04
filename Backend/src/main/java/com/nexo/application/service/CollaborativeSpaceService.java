@@ -107,7 +107,7 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
         LocalDateTime now = LocalDateTime.now();
         String token = newInvitationToken();
         PendingSpaceInvitation invitation = pendingInvitations.save(new PendingSpaceInvitation(null, space.id(), command.email(),
-                command.role(), inviter.id(), token, now.plus(7, ChronoUnit.DAYS), now, null));
+                command.role(), inviter.id(), token, now.plus(2, ChronoUnit.HOURS), now, null));
         if (activityEmails != null) {
             activityEmails.pendingSpaceInvitation(inviter, space, invitation.email(), invitation.role(),
                     frontendUrl + "/register?invitation=" + invitation.token());

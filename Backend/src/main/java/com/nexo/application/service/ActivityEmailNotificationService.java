@@ -50,7 +50,7 @@ public class ActivityEmailNotificationService {
                         + "Rol asignado: " + role + "\n\n"
                         + "Para aceptar la invitación, crea tu cuenta con este mismo correo usando este enlace:\n"
                         + registrationUrl + "\n\n"
-                        + "La invitación vence en 7 días.", "space_registration_invitation");
+                        + "La invitación vence en 2 horas.", "space_registration_invitation");
     }
 
     private void send(User recipient, String subject, String body, String event) {
