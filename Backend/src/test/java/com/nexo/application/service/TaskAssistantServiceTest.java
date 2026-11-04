@@ -31,7 +31,7 @@ class TaskAssistantServiceTest {
     }
 
     @Test
-    void sendsOnlyPendingTasksToConfiguredProviderAndReturnsItsAnswer() {
+    void sendsTaskContextToConfiguredProviderAndReturnsItsAnswer() {
         CapturingProvider provider = new CapturingProvider(true, "Prioriza Entregar avance hoy.");
         Task completed = new Task(2L, "Ya terminada", "", null, Task.Priority.BAJA,
                 Task.TaskStatus.COMPLETADA, 7L, null, null);
@@ -43,9 +43,9 @@ class TaskAssistantServiceTest {
         assertTrue(suggestion.providerConfigured());
         assertEquals("Prioriza Entregar avance hoy.", suggestion.answer());
         assertEquals("¿Qué debo priorizar?", provider.question);
-        assertEquals(1, provider.context.size());
+        assertEquals(2, provider.context.size());
         assertTrue(provider.context.getFirst().contains("Entregar avance"));
-        assertFalse(provider.context.getFirst().contains("Ya terminada"));
+        assertTrue(provider.context.stream().anyMatch(item -> item.contains("Ya terminada")));
     }
 
     private static Task pendingTask() {
