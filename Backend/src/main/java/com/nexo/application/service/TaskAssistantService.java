@@ -11,6 +11,9 @@ import com.nexo.domain.model.AssistantActionProposal;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +21,8 @@ import org.slf4j.LoggerFactory;
 public class TaskAssistantService implements TaskAssistantUseCase {
     private static final Logger log = LoggerFactory.getLogger(TaskAssistantService.class);
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final Pattern NOTE_CONTENT_UPDATE = Pattern.compile(
+            "(?is)(?:descripci[oó]n|contenido).*?(?:\\bpor\\b|\\ba\\b)\\s*(?:esta\\s*)?:?\\s*(.+)$");
     private final TaskRepositoryPort tasks;
     private final TaskAssistantProviderPort provider;
     private final PersonalNoteRepositoryPort notes;
@@ -35,9 +40,10 @@ public class TaskAssistantService implements TaskAssistantUseCase {
                 .limit(20)
                 .toList();
         List<Task> pending = userTasks.stream().filter(task -> task.status() != Task.TaskStatus.COMPLETADA).toList();
+        List<PersonalNote> userNotes = notes.findAllByOwnerId(userId).stream().limit(20).toList();
         List<String> context = new java.util.ArrayList<>();
         userTasks.forEach(task -> context.add(summarize(task)));
-        notes.findAllByOwnerId(userId).stream().limit(20).forEach(note -> context.add(summarize(note)));
+        userNotes.forEach(note -> context.add(summarize(note)));
 
         if (!provider.isConfigured()) {
             log.info("assistant_requested_without_provider userId={} pendingTasks={}", userId, pending.size());
@@ -47,8 +53,11 @@ public class TaskAssistantService implements TaskAssistantUseCase {
         }
 
         TaskAssistantProviderPort.AssistantResponse response = provider.ask(question, context);
+        List<AssistantActionProposal> actions = response.proposedActions().isEmpty()
+                ? recoverNoteUpdate(question, userNotes)
+                : response.proposedActions();
         log.info("assistant_response_generated userId={} pendingTasks={}", userId, pending.size());
-        return new TaskAssistantSuggestion(response.answer(), localActions(pending), true, response.proposedActions());
+        return new TaskAssistantSuggestion(response.answer(), localActions(pending), true, actions);
     }
 
     private String summarize(Task task) {
@@ -65,6 +74,35 @@ public class TaskAssistantService implements TaskAssistantUseCase {
         return pending.stream().limit(3)
                 .map(task -> "Revisar: " + task.title() + " (" + task.priority() + ")")
                 .toList();
+    }
+
+    /**
+     * Gemini puede describir correctamente una edición pero omitir el JSON de la acción.
+     * Para la edición explícita de una nota recuperamos solo el objetivo que coincide con
+     * el título real del usuario; si no hay coincidencia exacta, no se propone nada.
+     */
+    private List<AssistantActionProposal> recoverNoteUpdate(String question, List<PersonalNote> userNotes) {
+        String normalizedQuestion = normalize(question);
+        boolean requestsUpdate = normalizedQuestion.matches(".*(edita|editar|actualiza|actualizar|modifica|modificar|cambia|cambiar).*");
+        boolean mentionsNote = normalizedQuestion.contains("nota");
+        if (!requestsUpdate || !mentionsNote) return List.of();
+
+        Matcher contentMatcher = NOTE_CONTENT_UPDATE.matcher(question.trim());
+        if (!contentMatcher.find()) return List.of();
+        String newContent = contentMatcher.group(1).trim();
+        if (newContent.isBlank()) return List.of();
+
+        return userNotes.stream()
+                .filter(note -> normalizedQuestion.contains(normalize(note.title())))
+                .findFirst()
+                .map(note -> List.of(new AssistantActionProposal(
+                        AssistantActionProposal.Type.NOTE_UPDATE, note.id(), note.title(), newContent, "", "MEDIA")))
+                .orElseGet(List::of);
+    }
+
+    private String normalize(String value) {
+        return java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT);
     }
 
     /**

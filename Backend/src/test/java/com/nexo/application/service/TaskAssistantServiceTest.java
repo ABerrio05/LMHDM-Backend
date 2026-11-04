@@ -10,6 +10,7 @@ import com.nexo.application.ports.out.PersonalNoteRepositoryPort;
 import com.nexo.domain.model.PersonalNote;
 import com.nexo.domain.model.Task;
 import com.nexo.domain.model.TaskAssistantSuggestion;
+import com.nexo.domain.model.AssistantActionProposal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +49,24 @@ class TaskAssistantServiceTest {
         assertTrue(provider.context.stream().anyMatch(item -> item.contains("Ya terminada")));
     }
 
+    @Test
+    void recoversNoteUpdateWhenProviderUnderstandsButOmitsStructuredAction() {
+        CapturingProvider provider = new CapturingProvider(true, "La nota quedará lista al confirmarlo.");
+        PersonalNote note = new PersonalNote(9L, "Nota de prueba", "Contenido anterior", 7L, LocalDateTime.now());
+        TaskAssistantService service = new TaskAssistantService(
+                new FixedTaskRepository(List.of()), new FixedNoteRepository(List.of(note)), provider);
+
+        TaskAssistantSuggestion suggestion = service.suggest(7L,
+                "Modifica la descripción de la nota de prueba por esta: contenido actualizado");
+
+        assertEquals(1, suggestion.proposedActions().size());
+        AssistantActionProposal action = suggestion.proposedActions().getFirst();
+        assertEquals(AssistantActionProposal.Type.NOTE_UPDATE, action.type());
+        assertEquals(9L, action.targetId());
+        assertEquals("Nota de prueba", action.title());
+        assertEquals("contenido actualizado", action.description());
+    }
+
     private static Task pendingTask() {
         return new Task(1L, "Entregar avance", "", LocalDateTime.of(2026, 11, 2, 10, 0),
                 Task.Priority.ALTA, Task.TaskStatus.PENDIENTE, 7L, null, null);
@@ -64,8 +83,11 @@ class TaskAssistantServiceTest {
     }
 
     private static final class FixedNoteRepository implements PersonalNoteRepositoryPort {
+        private final List<PersonalNote> notes;
+        private FixedNoteRepository() { this(List.of()); }
+        private FixedNoteRepository(List<PersonalNote> notes) { this.notes = notes; }
         @Override public PersonalNote save(PersonalNote note) { throw new UnsupportedOperationException(); }
-        @Override public List<PersonalNote> findAllByOwnerId(Long ownerId) { return List.of(); }
+        @Override public List<PersonalNote> findAllByOwnerId(Long ownerId) { return notes; }
         @Override public Optional<PersonalNote> findById(Long noteId) { return Optional.empty(); }
         @Override public void delete(PersonalNote note) { }
     }
