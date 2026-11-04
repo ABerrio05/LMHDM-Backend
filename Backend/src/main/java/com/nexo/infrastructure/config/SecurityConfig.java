@@ -49,6 +49,9 @@ import com.nexo.application.service.TaskAssistantService;
 import com.nexo.application.ports.out.EmailDeliveryPort;
 import com.nexo.application.service.ActivityEmailNotificationService;
 import com.nexo.application.ports.out.PendingSpaceInvitationRepositoryPort;
+import com.nexo.application.ports.in.NotificationPreferenceUseCase;
+import com.nexo.application.ports.out.NotificationPreferenceRepositoryPort;
+import com.nexo.application.service.NotificationPreferenceService;
 
 @Configuration
 @EnableWebSecurity
@@ -141,7 +144,13 @@ public class SecurityConfig {
     }
 
     @Bean
-    ActivityEmailNotificationService activityEmailNotificationService(EmailDeliveryPort emailDelivery) {
-        return new ActivityEmailNotificationService(emailDelivery);
+    NotificationPreferenceUseCase notificationPreferenceUseCase(NotificationPreferenceRepositoryPort preferences) {
+        return new NotificationPreferenceService(preferences);
+    }
+
+    @Bean
+    ActivityEmailNotificationService activityEmailNotificationService(EmailDeliveryPort emailDelivery,
+                                                                       NotificationPreferenceUseCase preferences) {
+        return new ActivityEmailNotificationService(emailDelivery, preferences);
     }
 }

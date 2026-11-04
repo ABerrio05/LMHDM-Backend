@@ -1,6 +1,7 @@
 package com.nexo.application.service;
 
 import com.nexo.application.ports.out.EmailDeliveryPort;
+import com.nexo.application.ports.in.NotificationPreferenceUseCase;
 import com.nexo.domain.model.CollaborativeSpace;
 import com.nexo.domain.model.SpaceMember;
 import com.nexo.domain.model.Task;
@@ -12,12 +13,16 @@ import org.slf4j.LoggerFactory;
 public class ActivityEmailNotificationService {
     private static final Logger log = LoggerFactory.getLogger(ActivityEmailNotificationService.class);
     private final EmailDeliveryPort delivery;
+    private final NotificationPreferenceUseCase preferences;
 
-    public ActivityEmailNotificationService(EmailDeliveryPort delivery) { this.delivery = delivery; }
+    public ActivityEmailNotificationService(EmailDeliveryPort delivery) { this(delivery, null); }
+    public ActivityEmailNotificationService(EmailDeliveryPort delivery, NotificationPreferenceUseCase preferences) {
+        this.delivery = delivery; this.preferences = preferences;
+    }
 
     public void taskCreated(User owner, Task task) {
         String dueDate = task.dueDate() == null ? "Sin fecha límite" : task.dueDate().toString();
-        send(owner, "NEXO: tarea creada - " + task.title(),
+        sendActivity(owner, "NEXO: tarea creada - " + task.title(),
                 "Hola " + owner.name() + ",\n\n"
                         + "Tu tarea fue creada correctamente en NEXO.\n\n"
                         + "Tarea: " + task.title() + "\n"
@@ -27,7 +32,7 @@ public class ActivityEmailNotificationService {
     }
 
     public void sharedTaskCreated(User recipient, User creator, Task task) {
-        send(recipient, "NEXO: nueva tarea compartida - " + task.title(),
+        sendActivity(recipient, "NEXO: nueva tarea compartida - " + task.title(),
                 "Hola " + recipient.name() + ",\n\n"
                         + creator.name() + " creó una nueva tarea en uno de tus espacios colaborativos.\n\n"
                         + "Tarea: " + task.title() + "\n"
@@ -36,7 +41,7 @@ public class ActivityEmailNotificationService {
     }
 
     public void sharedTaskCompleted(User recipient, User completedBy, Task task) {
-        send(recipient, "NEXO: tarea compartida completada - " + task.title(),
+        sendActivity(recipient, "NEXO: tarea compartida completada - " + task.title(),
                 "Hola " + recipient.name() + ",\n\n"
                         + completedBy.name() + " marcó como completada una tarea de tu espacio colaborativo.\n\n"
                         + "Tarea: " + task.title() + "\n\n"
@@ -44,7 +49,7 @@ public class ActivityEmailNotificationService {
     }
 
     public void spaceCreated(User creator, CollaborativeSpace space) {
-        send(creator, "NEXO: espacio colaborativo creado - " + space.name(),
+        sendActivity(creator, "NEXO: espacio colaborativo creado - " + space.name(),
                 "Hola " + creator.name() + ",\n\n"
                         + "Creaste correctamente el espacio colaborativo: " + space.name() + ".\n"
                         + "Descripción: " + blankAsNotProvided(space.description()) + "\n\n"
@@ -72,6 +77,14 @@ public class ActivityEmailNotificationService {
 
     private void send(User recipient, String subject, String body, String event) {
         sendTo(recipient.email(), recipient.id(), subject, body, event);
+    }
+
+    private void sendActivity(User recipient, String subject, String body, String event) {
+        if (preferences != null && !preferences.activityEmailsEnabledFor(recipient.id())) {
+            log.info("activity_email_skipped event={} recipientUserId={} reason=user_preference", event, recipient.id());
+            return;
+        }
+        send(recipient, subject, body, event);
     }
 
     private void sendTo(String recipientEmail, Long recipientUserId, String subject, String body, String event) {
