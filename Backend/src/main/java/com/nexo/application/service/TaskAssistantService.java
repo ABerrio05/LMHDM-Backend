@@ -5,6 +5,7 @@ import com.nexo.application.ports.out.TaskAssistantProviderPort;
 import com.nexo.application.ports.out.TaskRepositoryPort;
 import com.nexo.domain.model.Task;
 import com.nexo.domain.model.TaskAssistantSuggestion;
+import com.nexo.domain.model.AssistantActionProposal;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
@@ -36,12 +37,12 @@ public class TaskAssistantService implements TaskAssistantUseCase {
             log.info("assistant_requested_without_provider userId={} pendingTasks={}", userId, pending.size());
             return new TaskAssistantSuggestion(
                     buildLocalPlan(pending),
-                    localActions(pending), false);
+                    localActions(pending), false, List.of());
         }
 
-        String answer = provider.ask(question, context);
+        TaskAssistantProviderPort.AssistantResponse response = provider.ask(question, context);
         log.info("assistant_response_generated userId={} pendingTasks={}", userId, pending.size());
-        return new TaskAssistantSuggestion(answer, localActions(pending), true);
+        return new TaskAssistantSuggestion(response.answer(), localActions(pending), true, response.proposedActions());
     }
 
     private String summarize(Task task) {

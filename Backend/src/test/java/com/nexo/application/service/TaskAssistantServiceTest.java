@@ -74,11 +74,11 @@ class TaskAssistantServiceTest {
         }
 
         @Override public boolean isConfigured() { return configured; }
-        @Override public String ask(String question, List<String> taskContext) {
+        @Override public TaskAssistantProviderPort.AssistantResponse ask(String question, List<String> taskContext) {
             this.wasCalled = true;
             this.question = question;
             this.context = taskContext;
-            return response;
+            return new TaskAssistantProviderPort.AssistantResponse(response, List.of());
         }
     }
 }

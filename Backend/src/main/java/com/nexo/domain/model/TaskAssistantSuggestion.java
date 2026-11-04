@@ -6,9 +6,12 @@ import java.util.List;
 public record TaskAssistantSuggestion(
         String answer,
         List<String> recommendedActions,
-        boolean providerConfigured
+        boolean providerConfigured,
+        List<AssistantActionProposal> proposedActions
 ) {
     public TaskAssistantSuggestion {
         recommendedActions = recommendedActions == null ? List.of() : List.copyOf(recommendedActions);
+        proposedActions = proposedActions == null ? List.of() : proposedActions.stream()
+                .filter(AssistantActionProposal::isUsable).limit(3).toList();
     }
 }

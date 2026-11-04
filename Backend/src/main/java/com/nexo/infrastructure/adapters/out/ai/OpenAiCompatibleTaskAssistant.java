@@ -3,6 +3,7 @@ package com.nexo.infrastructure.adapters.out.ai;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nexo.application.ports.out.TaskAssistantProviderPort;
+import com.nexo.domain.model.AssistantActionProposal;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -62,15 +63,14 @@ public class OpenAiCompatibleTaskAssistant implements TaskAssistantProviderPort 
     public boolean isConfigured() { return !apiKey.isBlank(); }
 
     @Override
-    public String ask(String question, List<String> taskContext) {
+    public AssistantResponse ask(String question, List<String> taskContext) {
         if (!isConfigured()) throw new TaskAssistantUnavailableException();
         String context = taskContext.isEmpty() ? "No hay tareas pendientes." : String.join("\n", taskContext);
         Map<String, Object> payload = Map.of(
                 "model", model,
                 "temperature", 0.3,
                 "messages", List.of(
-                        Map.of("role", "system", "content",
-                                "Eres el asistente de productividad de NEXO. Responde en español, de forma breve, práctica y sin inventar datos."),
+                        Map.of("role", "system", "content", "Eres el asistente de productividad de NEXO. Responde exclusivamente JSON válido, sin markdown: {\"answer\":\"respuesta breve en español\",\"proposedActions\":[{\"type\":\"TASK o NOTE\",\"title\":\"texto\",\"description\":\"texto\",\"dueDate\":\"YYYY-MM-DD o vacío\",\"priority\":\"ALTA, MEDIA o BAJA\"}]}. Propón acciones solo si el usuario pide crear o guardar algo. No inventes fechas."),
                         Map.of("role", "user", "content",
                                 "Consulta: " + question + "\n\nTareas actuales:\n" + context)));
         for (int attempt = 1; attempt <= MAX_PROVIDER_ATTEMPTS; attempt++) {
@@ -80,7 +80,7 @@ public class OpenAiCompatibleTaskAssistant implements TaskAssistantProviderPort 
             JsonNode root = mapper.readTree(response);
             String content = root.path("choices").path(0).path("message").path("content").asText();
             if (content.isBlank()) throw new IllegalStateException("El proveedor no devolvió una respuesta útil");
-            return content.trim();
+            return parseAssistantResponse(content);
             } catch (RestClientResponseException exception) {
                 if (!isTransientProviderError(exception) || attempt == MAX_PROVIDER_ATTEMPTS) {
                     throw new TaskAssistantUnavailableException();
@@ -91,6 +91,28 @@ public class OpenAiCompatibleTaskAssistant implements TaskAssistantProviderPort 
             }
         }
         throw new TaskAssistantUnavailableException();
+    }
+
+    private AssistantResponse parseAssistantResponse(String content) {
+        try {
+            String json = content.trim().replaceFirst("^```json\\s*", "").replaceFirst("^```\\s*", "")
+                    .replaceFirst("\\s*```$", "");
+            JsonNode parsed = mapper.readTree(json);
+            String answer = parsed.path("answer").asText().trim();
+            if (answer.isBlank()) return new AssistantResponse(content.trim(), List.of());
+            List<AssistantActionProposal> actions = new java.util.ArrayList<>();
+            for (JsonNode action : parsed.path("proposedActions")) {
+                try {
+                    actions.add(new AssistantActionProposal(
+                            AssistantActionProposal.Type.valueOf(action.path("type").asText().toUpperCase()),
+                            action.path("title").asText(), action.path("description").asText(),
+                            action.path("dueDate").asText(), action.path("priority").asText()));
+                } catch (IllegalArgumentException ignored) { }
+            }
+            return new AssistantResponse(answer, actions);
+        } catch (Exception ignored) {
+            return new AssistantResponse(content.trim(), List.of());
+        }
     }
 
     private boolean isTransientProviderError(RestClientResponseException exception) {

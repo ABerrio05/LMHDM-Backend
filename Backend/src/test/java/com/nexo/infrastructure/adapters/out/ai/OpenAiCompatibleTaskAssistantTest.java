@@ -33,10 +33,10 @@ class OpenAiCompatibleTaskAssistantTest {
         server.expect(requestTo("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"))
                 .andExpect(method(POST))
                 .andRespond(withSuccess("""
-                        {"choices":[{"message":{"content":"Prioriza la tarea urgente."}}]}
+                        {"choices":[{"message":{"content":"{\\\"answer\\\":\\\"Prioriza la tarea urgente.\\\",\\\"proposedActions\\\":[]}"}}]}
                         """, MediaType.APPLICATION_JSON));
 
-        String answer = assistant.ask("¿Qué hago primero?", List.of("Tarea urgente"));
+        String answer = assistant.ask("¿Qué hago primero?", List.of("Tarea urgente")).answer();
 
         assertThat(answer).isEqualTo("Prioriza la tarea urgente.");
         server.verify();
