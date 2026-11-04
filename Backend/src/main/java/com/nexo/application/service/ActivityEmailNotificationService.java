@@ -26,6 +26,23 @@ public class ActivityEmailNotificationService {
                         + "Ingresa a NEXO para organizarla.", "task_created");
     }
 
+    public void sharedTaskCreated(User recipient, User creator, Task task) {
+        send(recipient, "NEXO: nueva tarea compartida - " + task.title(),
+                "Hola " + recipient.name() + ",\n\n"
+                        + creator.name() + " creó una nueva tarea en uno de tus espacios colaborativos.\n\n"
+                        + "Tarea: " + task.title() + "\n"
+                        + "Prioridad: " + task.priority() + "\n\n"
+                        + "Ingresa a NEXO para verla y coordinar el trabajo.", "shared_task_created");
+    }
+
+    public void sharedTaskCompleted(User recipient, User completedBy, Task task) {
+        send(recipient, "NEXO: tarea compartida completada - " + task.title(),
+                "Hola " + recipient.name() + ",\n\n"
+                        + completedBy.name() + " marcó como completada una tarea de tu espacio colaborativo.\n\n"
+                        + "Tarea: " + task.title() + "\n\n"
+                        + "Ingresa a NEXO para revisar el avance del equipo.", "shared_task_completed");
+    }
+
     public void spaceCreated(User creator, CollaborativeSpace space) {
         send(creator, "NEXO: espacio colaborativo creado - " + space.name(),
                 "Hola " + creator.name() + ",\n\n"

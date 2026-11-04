@@ -50,7 +50,10 @@ public class TaskManagementService implements TaskManagementUseCase {
         log.info("task_created taskId={} ownerId={} spaceId={} priority={}", created.id(), ownerId,
                 created.spaceId(), created.priority());
         if (users != null && activityEmails != null) {
-            users.findById(ownerId).ifPresent(owner -> activityEmails.taskCreated(owner, created));
+            users.findById(ownerId).ifPresent(owner -> {
+                activityEmails.taskCreated(owner, created);
+                notifySpaceMembers(created, owner, false);
+            });
         }
         return created;
     }
@@ -77,6 +80,9 @@ public class TaskManagementService implements TaskManagementUseCase {
                 current.priority(), status, current.ownerId(), current.spaceId(), current.recurrenceId()));
         if (status == Task.TaskStatus.COMPLETADA && current.status() != Task.TaskStatus.COMPLETADA) {
             createNextOccurrence(current);
+            if (users != null && activityEmails != null) {
+                users.findById(ownerId).ifPresent(owner -> notifySpaceMembers(updated, owner, true));
+            }
         }
         log.info("task_status_changed taskId={} ownerId={} status={}", updated.id(), ownerId, status);
         return updated;
@@ -103,6 +109,18 @@ public class TaskManagementService implements TaskManagementUseCase {
         int interval = command.recurrenceInterval() == null ? 1 : command.recurrenceInterval();
         return recurrences.save(new Recurrence(null, command.recurrenceFrequency(), interval,
                 command.recurrenceEndDate())).id();
+    }
+
+    private void notifySpaceMembers(Task task, com.nexo.domain.model.User actor, boolean completed) {
+        if (task.spaceId() == null) return;
+        members.findAllBySpaceId(task.spaceId()).stream()
+                .map(member -> member.userId())
+                .filter(memberId -> !memberId.equals(actor.id()))
+                .distinct()
+                .forEach(memberId -> users.findById(memberId).ifPresent(recipient -> {
+                    if (completed) activityEmails.sharedTaskCompleted(recipient, actor, task);
+                    else activityEmails.sharedTaskCreated(recipient, actor, task);
+                }));
     }
 
     /** Al completar una tarea recurrente, crea la próxima sin modificar el historial. */
