@@ -43,16 +43,30 @@ public class ActivityEmailNotificationService {
                         + "Inicia sesión en NEXO para ver el espacio y sus tareas.", "space_invitation");
     }
 
+    public void pendingSpaceInvitation(User inviter, CollaborativeSpace space, String email, SpaceMember.Role role,
+                                       String registrationUrl) {
+        sendTo(email, inviter.id(), "NEXO: invitación para registrarte en " + space.name(),
+                "Hola,\n\n" + inviter.name() + " te invitó al espacio colaborativo \"" + space.name() + "\" en NEXO.\n"
+                        + "Rol asignado: " + role + "\n\n"
+                        + "Para aceptar la invitación, crea tu cuenta con este mismo correo usando este enlace:\n"
+                        + registrationUrl + "\n\n"
+                        + "La invitación vence en 7 días.", "space_registration_invitation");
+    }
+
     private void send(User recipient, String subject, String body, String event) {
+        sendTo(recipient.email(), recipient.id(), subject, body, event);
+    }
+
+    private void sendTo(String recipientEmail, Long recipientUserId, String subject, String body, String event) {
         if (!delivery.isConfigured()) {
-            log.info("activity_email_skipped event={} recipientUserId={} reason=mail_not_configured", event, recipient.id());
+            log.info("activity_email_skipped event={} recipientUserId={} reason=mail_not_configured", event, recipientUserId);
             return;
         }
         try {
-            delivery.send(recipient.email(), subject, body);
-            log.info("activity_email_sent event={} recipientUserId={}", event, recipient.id());
+            delivery.send(recipientEmail, subject, body);
+            log.info("activity_email_sent event={} recipientUserId={}", event, recipientUserId);
         } catch (RuntimeException exception) {
-            log.warn("activity_email_failed event={} recipientUserId={}", event, recipient.id(), exception);
+            log.warn("activity_email_failed event={} recipientUserId={}", event, recipientUserId, exception);
         }
     }
 

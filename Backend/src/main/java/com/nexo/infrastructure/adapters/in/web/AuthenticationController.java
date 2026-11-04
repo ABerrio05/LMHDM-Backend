@@ -25,7 +25,7 @@ public class AuthenticationController {
     @PostMapping("/register")
     @Operation(summary = "Registrar usuario", description = "Crea una cuenta y devuelve el usuario junto con su accessToken JWT.")
     public ResponseEntity<AuthenticationUseCase.AuthenticationResult> register(@Valid @RequestBody RegisterRequest request) {
-        var result = authentication.register(new AuthenticationUseCase.RegisterCommand(request.name(), request.email(), request.password()));
+        var result = authentication.register(new AuthenticationUseCase.RegisterCommand(request.name(), request.email(), request.password(), request.invitationToken()));
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
@@ -41,7 +41,8 @@ public class AuthenticationController {
             @NotBlank(message = "El correo es obligatorio")
             @Email(message = "El correo debe tener un formato válido") String email,
             @NotBlank(message = "La contraseña es obligatoria")
-            @Size(min = 8, max = 72, message = "La contraseña debe tener entre 8 y 72 caracteres") String password) { }
+            @Size(min = 8, max = 72, message = "La contraseña debe tener entre 8 y 72 caracteres") String password,
+            @Size(max = 128, message = "La invitación no es válida") String invitationToken) { }
 
     public record LoginRequest(
             @NotBlank(message = "El correo es obligatorio")

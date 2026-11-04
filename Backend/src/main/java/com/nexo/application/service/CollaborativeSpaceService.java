@@ -5,11 +5,16 @@ import com.nexo.application.ports.out.CollaborativeSpaceRepositoryPort;
 import com.nexo.application.ports.out.SpaceMemberRepositoryPort;
 import com.nexo.application.ports.out.TaskRepositoryPort;
 import com.nexo.application.ports.out.UserRepositoryPort;
+import com.nexo.application.ports.out.PendingSpaceInvitationRepositoryPort;
+import com.nexo.domain.model.PendingSpaceInvitation;
 import com.nexo.domain.model.CollaborativeSpace;
 import com.nexo.domain.model.SpaceMember;
 import com.nexo.domain.model.Task;
 import com.nexo.domain.model.User;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,16 +27,26 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
     private final UserRepositoryPort users;
     private final TaskRepositoryPort tasks;
     private final ActivityEmailNotificationService activityEmails;
+    private final PendingSpaceInvitationRepositoryPort pendingInvitations;
+    private final String frontendUrl;
 
     public CollaborativeSpaceService(CollaborativeSpaceRepositoryPort spaces, SpaceMemberRepositoryPort members,
                                      UserRepositoryPort users, TaskRepositoryPort tasks) {
-        this(spaces, members, users, tasks, null);
+        this(spaces, members, users, tasks, null, null, "http://localhost:4200");
     }
 
     public CollaborativeSpaceService(CollaborativeSpaceRepositoryPort spaces, SpaceMemberRepositoryPort members,
                                      UserRepositoryPort users, TaskRepositoryPort tasks,
                                      ActivityEmailNotificationService activityEmails) {
+        this(spaces, members, users, tasks, activityEmails, null, "http://localhost:4200");
+    }
+
+    public CollaborativeSpaceService(CollaborativeSpaceRepositoryPort spaces, SpaceMemberRepositoryPort members,
+                                     UserRepositoryPort users, TaskRepositoryPort tasks, ActivityEmailNotificationService activityEmails,
+                                     PendingSpaceInvitationRepositoryPort pendingInvitations, String frontendUrl) {
         this.spaces = spaces; this.members = members; this.users = users; this.tasks = tasks; this.activityEmails = activityEmails;
+        this.pendingInvitations = pendingInvitations;
+        this.frontendUrl = frontendUrl == null ? "http://localhost:4200" : frontendUrl.replaceAll("/+$", "");
     }
 
     @Override public CollaborativeSpace create(Long userId, CreateSpaceCommand command) {
@@ -69,20 +84,42 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
         log.info("space_deleted spaceId={} requestedBy={}", spaceId, userId);
     }
 
-    @Override public SpaceMember invite(Long userId, Long spaceId, InviteMemberCommand command) {
+    @Override public InvitationResult invite(Long userId, Long spaceId, InviteMemberCommand command) {
         requireAdministrator(userId, spaceId);
-        User invitedUser = users.findByEmail(command.email()).orElseThrow(UserNotFoundException::new);
+        CollaborativeSpace space = spaces.findById(spaceId).orElseThrow(SpaceNotFoundException::new);
+        User inviter = users.findById(userId).orElseThrow(UserNotFoundException::new);
+        User invitedUser = users.findByEmail(command.email()).orElse(null);
+        if (invitedUser == null) return createPendingInvitation(inviter, space, command);
         if (members.findBySpaceIdAndUserId(spaceId, invitedUser.id()).isPresent()) {
             throw new MemberAlreadyExistsException();
         }
         SpaceMember member = members.save(new SpaceMember(null, spaceId, invitedUser.id(), command.role(), LocalDateTime.now()));
         if (activityEmails != null) {
-            CollaborativeSpace space = spaces.findById(spaceId).orElseThrow(SpaceNotFoundException::new);
-            users.findById(userId).ifPresent(inviter -> activityEmails.spaceInvitation(invitedUser, inviter, space, command.role()));
+            activityEmails.spaceInvitation(invitedUser, inviter, space, command.role());
         }
         log.info("space_member_invited spaceId={} invitedUserId={} role={} requestedBy={}", spaceId,
                 invitedUser.id(), command.role(), userId);
-        return member;
+        return new InvitationResult(member, false);
+    }
+
+    private InvitationResult createPendingInvitation(User inviter, CollaborativeSpace space, InviteMemberCommand command) {
+        if (pendingInvitations == null) throw new UserNotFoundException();
+        LocalDateTime now = LocalDateTime.now();
+        String token = newInvitationToken();
+        PendingSpaceInvitation invitation = pendingInvitations.save(new PendingSpaceInvitation(null, space.id(), command.email(),
+                command.role(), inviter.id(), token, now.plus(7, ChronoUnit.DAYS), now, null));
+        if (activityEmails != null) {
+            activityEmails.pendingSpaceInvitation(inviter, space, invitation.email(), invitation.role(),
+                    frontendUrl + "/register?invitation=" + invitation.token());
+        }
+        log.info("space_registration_invited spaceId={} email={} requestedBy={}", space.id(), invitation.email(), inviter.id());
+        return new InvitationResult(null, true);
+    }
+
+    private String newInvitationToken() {
+        byte[] bytes = new byte[32];
+        new SecureRandom().nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     @Override public List<SpaceMember> listMembers(Long userId, Long spaceId) {

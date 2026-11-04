@@ -48,6 +48,7 @@ import com.nexo.application.ports.out.TaskAssistantProviderPort;
 import com.nexo.application.service.TaskAssistantService;
 import com.nexo.application.ports.out.EmailDeliveryPort;
 import com.nexo.application.service.ActivityEmailNotificationService;
+import com.nexo.application.ports.out.PendingSpaceInvitationRepositoryPort;
 
 @Configuration
 @EnableWebSecurity
@@ -89,8 +90,10 @@ public class SecurityConfig {
     @Bean
     AuthenticationUseCase authenticationUseCase(UserRepositoryPort users, PasswordHasherPort passwordHasher,
                                                 TokenProviderPort tokenProvider,
-                                                @Value("${app.developer.email:}") String developerEmail) {
-        return new AuthenticationService(users, passwordHasher, tokenProvider, developerEmail);
+                                                @Value("${app.developer.email:}") String developerEmail,
+                                                PendingSpaceInvitationRepositoryPort pendingInvitations,
+                                                SpaceMemberRepositoryPort members) {
+        return new AuthenticationService(users, passwordHasher, tokenProvider, developerEmail, pendingInvitations, members);
     }
 
     @Bean
@@ -110,8 +113,10 @@ public class SecurityConfig {
     @Bean
     CollaborativeSpaceUseCase collaborativeSpaceUseCase(CollaborativeSpaceRepositoryPort spaces,
                                                          SpaceMemberRepositoryPort members, UserRepositoryPort users,
-                                                         TaskRepositoryPort tasks, ActivityEmailNotificationService activityEmails) {
-        return new CollaborativeSpaceService(spaces, members, users, tasks, activityEmails);
+                                                         TaskRepositoryPort tasks, ActivityEmailNotificationService activityEmails,
+                                                         PendingSpaceInvitationRepositoryPort pendingInvitations,
+                                                         @Value("${app.frontend-url:http://localhost:4200}") String frontendUrl) {
+        return new CollaborativeSpaceService(spaces, members, users, tasks, activityEmails, pendingInvitations, frontendUrl);
     }
 
     @Bean

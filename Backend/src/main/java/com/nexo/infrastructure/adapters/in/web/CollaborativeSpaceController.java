@@ -64,11 +64,11 @@ public class CollaborativeSpaceController {
     }
     @PostMapping("/{spaceId}/members")
     @Operation(summary = "Invitar integrante")
-    public ResponseEntity<SpaceMember> invite(@AuthenticationPrincipal Long userId, @PathVariable Long spaceId,
+    public ResponseEntity<CollaborativeSpaceUseCase.InvitationResult> invite(@AuthenticationPrincipal Long userId, @PathVariable Long spaceId,
                                                @Valid @RequestBody InviteMemberRequest request) {
-        SpaceMember member = spaces.invite(userId, spaceId,
+        var result = spaces.invite(userId, spaceId,
                 new CollaborativeSpaceUseCase.InviteMemberCommand(request.email(), request.role()));
-        return ResponseEntity.status(HttpStatus.CREATED).body(member);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
     @GetMapping("/{spaceId}/members")
     @Operation(summary = "Listar integrantes")

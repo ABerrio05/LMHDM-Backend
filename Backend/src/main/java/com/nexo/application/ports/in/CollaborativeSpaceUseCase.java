@@ -11,11 +11,12 @@ public interface CollaborativeSpaceUseCase {
     CollaborativeSpace get(Long userId, Long spaceId);
     CollaborativeSpace update(Long userId, Long spaceId, UpdateSpaceCommand command);
     void delete(Long userId, Long spaceId);
-    SpaceMember invite(Long userId, Long spaceId, InviteMemberCommand command);
+    InvitationResult invite(Long userId, Long spaceId, InviteMemberCommand command);
     List<SpaceMember> listMembers(Long userId, Long spaceId);
     List<Task> listTasks(Long userId, Long spaceId);
 
     record CreateSpaceCommand(String name, String description) { }
     record UpdateSpaceCommand(String name, String description) { }
     record InviteMemberCommand(String email, SpaceMember.Role role) { }
+    record InvitationResult(SpaceMember member, boolean registrationRequired) { }
 }

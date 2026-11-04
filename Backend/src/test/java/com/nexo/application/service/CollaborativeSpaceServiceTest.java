@@ -31,12 +31,13 @@ class CollaborativeSpaceServiceTest {
 
         CollaborativeSpace space = service.create(owner.id(),
                 new CollaborativeSpaceUseCase.CreateSpaceCommand("Comité", "Preparación"));
-        SpaceMember membership = service.invite(owner.id(), space.id(),
+        var invitation = service.invite(owner.id(), space.id(),
                 new CollaborativeSpaceUseCase.InviteMemberCommand(invited.email(), SpaceMember.Role.MIEMBRO));
 
         assertEquals(SpaceMember.Role.ADMINISTRADOR,
                 members.findBySpaceIdAndUserId(space.id(), owner.id()).orElseThrow().role());
-        assertEquals(invited.id(), membership.userId());
+        assertEquals(invited.id(), invitation.member().userId());
+        assertTrue(!invitation.registrationRequired());
         assertEquals(2, service.listMembers(owner.id(), space.id()).size());
     }
 
