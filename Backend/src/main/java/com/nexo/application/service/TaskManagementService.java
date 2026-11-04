@@ -4,6 +4,7 @@ import com.nexo.application.ports.in.TaskManagementUseCase;
 import com.nexo.application.ports.out.TaskRepositoryPort;
 import com.nexo.application.ports.out.RecurrenceRepositoryPort;
 import com.nexo.application.ports.out.ReminderRepositoryPort;
+import com.nexo.application.ports.out.UserRepositoryPort;
 import com.nexo.application.ports.out.SpaceMemberRepositoryPort;
 import com.nexo.domain.model.Task;
 import com.nexo.domain.model.Recurrence;
@@ -19,14 +20,23 @@ public class TaskManagementService implements TaskManagementUseCase {
     private final SpaceMemberRepositoryPort members;
     private final RecurrenceRepositoryPort recurrences;
     private final ReminderRepositoryPort reminders;
+    private final UserRepositoryPort users;
+    private final ActivityEmailNotificationService activityEmails;
 
     public TaskManagementService(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members, RecurrenceRepositoryPort recurrences) {
-        this(tasks, members, recurrences, null);
+        this(tasks, members, recurrences, null, null, null);
     }
 
     public TaskManagementService(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members,
                                  RecurrenceRepositoryPort recurrences, ReminderRepositoryPort reminders) {
+        this(tasks, members, recurrences, reminders, null, null);
+    }
+
+    public TaskManagementService(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members,
+                                 RecurrenceRepositoryPort recurrences, ReminderRepositoryPort reminders,
+                                 UserRepositoryPort users, ActivityEmailNotificationService activityEmails) {
         this.tasks = tasks; this.members = members; this.recurrences = recurrences; this.reminders = reminders;
+        this.users = users; this.activityEmails = activityEmails;
     }
 
     @Override
@@ -39,6 +49,9 @@ public class TaskManagementService implements TaskManagementUseCase {
                 command.priority(), Task.TaskStatus.PENDIENTE, ownerId, command.spaceId(), recurrenceId));
         log.info("task_created taskId={} ownerId={} spaceId={} priority={}", created.id(), ownerId,
                 created.spaceId(), created.priority());
+        if (users != null && activityEmails != null) {
+            users.findById(ownerId).ifPresent(owner -> activityEmails.taskCreated(owner, created));
+        }
         return created;
     }
 

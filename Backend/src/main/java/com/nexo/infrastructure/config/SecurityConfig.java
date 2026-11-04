@@ -46,6 +46,8 @@ import com.nexo.application.service.AuditLogService;
 import com.nexo.application.ports.in.TaskAssistantUseCase;
 import com.nexo.application.ports.out.TaskAssistantProviderPort;
 import com.nexo.application.service.TaskAssistantService;
+import com.nexo.application.ports.out.EmailDeliveryPort;
+import com.nexo.application.service.ActivityEmailNotificationService;
 
 @Configuration
 @EnableWebSecurity
@@ -93,8 +95,9 @@ public class SecurityConfig {
 
     @Bean
     TaskManagementUseCase taskManagementUseCase(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members,
-                                                RecurrenceRepositoryPort recurrences, ReminderRepositoryPort reminders) {
-        return new TaskManagementService(tasks, members, recurrences, reminders);
+                                                RecurrenceRepositoryPort recurrences, ReminderRepositoryPort reminders,
+                                                UserRepositoryPort users, ActivityEmailNotificationService activityEmails) {
+        return new TaskManagementService(tasks, members, recurrences, reminders, users, activityEmails);
     }
 
     @Bean
@@ -107,8 +110,8 @@ public class SecurityConfig {
     @Bean
     CollaborativeSpaceUseCase collaborativeSpaceUseCase(CollaborativeSpaceRepositoryPort spaces,
                                                          SpaceMemberRepositoryPort members, UserRepositoryPort users,
-                                                         TaskRepositoryPort tasks) {
-        return new CollaborativeSpaceService(spaces, members, users, tasks);
+                                                         TaskRepositoryPort tasks, ActivityEmailNotificationService activityEmails) {
+        return new CollaborativeSpaceService(spaces, members, users, tasks, activityEmails);
     }
 
     @Bean
@@ -130,5 +133,10 @@ public class SecurityConfig {
     TaskAssistantUseCase taskAssistantUseCase(TaskRepositoryPort tasks, PersonalNoteRepositoryPort notes,
                                               TaskAssistantProviderPort provider) {
         return new TaskAssistantService(tasks, notes, provider);
+    }
+
+    @Bean
+    ActivityEmailNotificationService activityEmailNotificationService(EmailDeliveryPort emailDelivery) {
+        return new ActivityEmailNotificationService(emailDelivery);
     }
 }

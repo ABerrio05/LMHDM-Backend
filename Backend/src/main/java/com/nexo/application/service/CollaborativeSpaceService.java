@@ -21,16 +21,24 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
     private final SpaceMemberRepositoryPort members;
     private final UserRepositoryPort users;
     private final TaskRepositoryPort tasks;
+    private final ActivityEmailNotificationService activityEmails;
 
     public CollaborativeSpaceService(CollaborativeSpaceRepositoryPort spaces, SpaceMemberRepositoryPort members,
                                      UserRepositoryPort users, TaskRepositoryPort tasks) {
-        this.spaces = spaces; this.members = members; this.users = users; this.tasks = tasks;
+        this(spaces, members, users, tasks, null);
+    }
+
+    public CollaborativeSpaceService(CollaborativeSpaceRepositoryPort spaces, SpaceMemberRepositoryPort members,
+                                     UserRepositoryPort users, TaskRepositoryPort tasks,
+                                     ActivityEmailNotificationService activityEmails) {
+        this.spaces = spaces; this.members = members; this.users = users; this.tasks = tasks; this.activityEmails = activityEmails;
     }
 
     @Override public CollaborativeSpace create(Long userId, CreateSpaceCommand command) {
         CollaborativeSpace space = spaces.save(new CollaborativeSpace(null, command.name(), command.description(), userId, LocalDateTime.now()));
         members.save(new SpaceMember(null, space.id(), userId, SpaceMember.Role.ADMINISTRADOR, LocalDateTime.now()));
         log.info("space_created spaceId={} creatorId={}", space.id(), userId);
+        if (activityEmails != null) users.findById(userId).ifPresent(creator -> activityEmails.spaceCreated(creator, space));
         return space;
     }
 
@@ -68,6 +76,10 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
             throw new MemberAlreadyExistsException();
         }
         SpaceMember member = members.save(new SpaceMember(null, spaceId, invitedUser.id(), command.role(), LocalDateTime.now()));
+        if (activityEmails != null) {
+            CollaborativeSpace space = spaces.findById(spaceId).orElseThrow(SpaceNotFoundException::new);
+            users.findById(userId).ifPresent(inviter -> activityEmails.spaceInvitation(invitedUser, inviter, space, command.role()));
+        }
         log.info("space_member_invited spaceId={} invitedUserId={} role={} requestedBy={}", spaceId,
                 invitedUser.id(), command.role(), userId);
         return member;
