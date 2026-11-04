@@ -93,8 +93,8 @@ public class SecurityConfig {
 
     @Bean
     TaskManagementUseCase taskManagementUseCase(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members,
-                                                RecurrenceRepositoryPort recurrences) {
-        return new TaskManagementService(tasks, members, recurrences);
+                                                RecurrenceRepositoryPort recurrences, ReminderRepositoryPort reminders) {
+        return new TaskManagementService(tasks, members, recurrences, reminders);
     }
 
     @Bean

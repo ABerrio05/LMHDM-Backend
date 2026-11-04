@@ -3,6 +3,7 @@ package com.nexo.application.service;
 import com.nexo.application.ports.in.TaskManagementUseCase;
 import com.nexo.application.ports.out.TaskRepositoryPort;
 import com.nexo.application.ports.out.RecurrenceRepositoryPort;
+import com.nexo.application.ports.out.ReminderRepositoryPort;
 import com.nexo.application.ports.out.SpaceMemberRepositoryPort;
 import com.nexo.domain.model.Task;
 import com.nexo.domain.model.Recurrence;
@@ -17,9 +18,15 @@ public class TaskManagementService implements TaskManagementUseCase {
     private final TaskRepositoryPort tasks;
     private final SpaceMemberRepositoryPort members;
     private final RecurrenceRepositoryPort recurrences;
+    private final ReminderRepositoryPort reminders;
 
     public TaskManagementService(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members, RecurrenceRepositoryPort recurrences) {
-        this.tasks = tasks; this.members = members; this.recurrences = recurrences;
+        this(tasks, members, recurrences, null);
+    }
+
+    public TaskManagementService(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members,
+                                 RecurrenceRepositoryPort recurrences, ReminderRepositoryPort reminders) {
+        this.tasks = tasks; this.members = members; this.recurrences = recurrences; this.reminders = reminders;
     }
 
     @Override
@@ -65,6 +72,7 @@ public class TaskManagementService implements TaskManagementUseCase {
     @Override
     public void delete(Long ownerId, Long taskId) {
         Task task = taskOwnedBy(ownerId, taskId);
+        if (reminders != null) reminders.findAllByTaskId(taskId).forEach(reminders::delete);
         tasks.delete(task);
         if (task.recurrenceId() != null) recurrences.deleteById(task.recurrenceId());
         log.info("task_deleted taskId={} ownerId={}", taskId, ownerId);

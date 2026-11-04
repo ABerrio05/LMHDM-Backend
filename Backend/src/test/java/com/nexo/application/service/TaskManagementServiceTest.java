@@ -7,7 +7,9 @@ import com.nexo.application.ports.in.TaskManagementUseCase.CreateTaskCommand;
 import com.nexo.application.ports.out.TaskRepositoryPort;
 import com.nexo.application.ports.out.SpaceMemberRepositoryPort;
 import com.nexo.application.ports.out.RecurrenceRepositoryPort;
+import com.nexo.application.ports.out.ReminderRepositoryPort;
 import com.nexo.domain.model.Recurrence;
+import com.nexo.domain.model.Reminder;
 import com.nexo.domain.model.SpaceMember;
 import com.nexo.domain.model.Task;
 import java.util.ArrayList;
@@ -80,6 +82,22 @@ class TaskManagementServiceTest {
         assertEquals(created.title(), next.title());
     }
 
+    @Test
+    void deletesTaskRemindersBeforeDeletingTheTask() {
+        List<Task> saved = new ArrayList<>();
+        InMemoryTaskRepository taskRepository = new InMemoryTaskRepository(saved);
+        InMemoryReminderRepository reminderRepository = new InMemoryReminderRepository();
+        TaskManagementService service = new TaskManagementService(taskRepository, new InMemoryMemberRepository(),
+                new InMemoryRecurrenceRepository(), reminderRepository);
+        Task task = service.create(7L, new CreateTaskCommand("Con recordatorio", "", null, Task.Priority.MEDIA, null));
+        reminderRepository.reminders.add(new Reminder(1L, LocalDateTime.of(2030, 1, 1, 9, 0), "Aviso", task.id(), null));
+
+        service.delete(7L, task.id());
+
+        assertEquals(List.of(), reminderRepository.reminders);
+        assertEquals(List.of(), saved);
+    }
+
     private static class InMemoryTaskRepository implements TaskRepositoryPort {
         private final List<Task> tasks;
         private InMemoryTaskRepository(List<Task> tasks) { this.tasks = tasks; }
@@ -112,5 +130,14 @@ class TaskManagementServiceTest {
         }
         public Optional<Recurrence> findById(Long recurrenceId) { return recurrences.stream().filter(item -> item.id().equals(recurrenceId)).findFirst(); }
         public void deleteById(Long recurrenceId) { recurrences.removeIf(item -> item.id().equals(recurrenceId)); }
+    }
+
+    private static class InMemoryReminderRepository implements ReminderRepositoryPort {
+        private final List<Reminder> reminders = new ArrayList<>();
+        public Reminder save(Reminder reminder) { reminders.add(reminder); return reminder; }
+        public List<Reminder> findAllByTaskId(Long taskId) { return reminders.stream().filter(item -> item.taskId().equals(taskId)).toList(); }
+        public Optional<Reminder> findById(Long reminderId) { return reminders.stream().filter(item -> item.id().equals(reminderId)).findFirst(); }
+        public List<Reminder> findDueBeforeOrAt(LocalDateTime dateTime) { return List.of(); }
+        public void delete(Reminder reminder) { reminders.removeIf(item -> item.id().equals(reminder.id())); }
     }
 }
