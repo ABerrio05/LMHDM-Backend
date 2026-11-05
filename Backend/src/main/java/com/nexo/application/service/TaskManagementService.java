@@ -6,6 +6,7 @@ import com.nexo.application.ports.out.RecurrenceRepositoryPort;
 import com.nexo.application.ports.out.ReminderRepositoryPort;
 import com.nexo.application.ports.out.UserRepositoryPort;
 import com.nexo.application.ports.out.SpaceMemberRepositoryPort;
+import com.nexo.application.ports.out.EmailNotificationRepositoryPort;
 import com.nexo.domain.model.Task;
 import com.nexo.domain.model.Recurrence;
 import java.time.LocalDateTime;
@@ -22,21 +23,29 @@ public class TaskManagementService implements TaskManagementUseCase {
     private final ReminderRepositoryPort reminders;
     private final UserRepositoryPort users;
     private final ActivityEmailNotificationService activityEmails;
+    private final EmailNotificationRepositoryPort notifications;
 
     public TaskManagementService(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members, RecurrenceRepositoryPort recurrences) {
-        this(tasks, members, recurrences, null, null, null);
+        this(tasks, members, recurrences, null, null, null, null);
     }
 
     public TaskManagementService(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members,
                                  RecurrenceRepositoryPort recurrences, ReminderRepositoryPort reminders) {
-        this(tasks, members, recurrences, reminders, null, null);
+        this(tasks, members, recurrences, reminders, null, null, null);
     }
 
     public TaskManagementService(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members,
                                  RecurrenceRepositoryPort recurrences, ReminderRepositoryPort reminders,
                                  UserRepositoryPort users, ActivityEmailNotificationService activityEmails) {
+        this(tasks, members, recurrences, reminders, users, activityEmails, null);
+    }
+
+    public TaskManagementService(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members,
+                                 RecurrenceRepositoryPort recurrences, ReminderRepositoryPort reminders,
+                                 UserRepositoryPort users, ActivityEmailNotificationService activityEmails,
+                                 EmailNotificationRepositoryPort notifications) {
         this.tasks = tasks; this.members = members; this.recurrences = recurrences; this.reminders = reminders;
-        this.users = users; this.activityEmails = activityEmails;
+        this.users = users; this.activityEmails = activityEmails; this.notifications = notifications;
     }
 
     @Override
@@ -70,6 +79,10 @@ public class TaskManagementService implements TaskManagementUseCase {
         Task updated = tasks.save(new Task(current.id(), command.title(), command.description(), command.dueDate(),
                 command.priority(), current.status(), current.ownerId(), current.spaceId(), current.recurrenceId()));
         log.info("task_updated taskId={} ownerId={}", updated.id(), ownerId);
+        if (users != null && activityEmails != null) users.findById(ownerId).ifPresent(owner -> {
+            activityEmails.taskUpdated(owner, updated);
+            notifySpaceMembers(updated, owner, "updated");
+        });
         return updated;
     }
 
@@ -91,10 +104,18 @@ public class TaskManagementService implements TaskManagementUseCase {
     @Override
     public void delete(Long ownerId, Long taskId) {
         Task task = taskOwnedBy(ownerId, taskId);
-        if (reminders != null) reminders.findAllByTaskId(taskId).forEach(reminders::delete);
+        if (reminders != null) reminders.findAllByTaskId(taskId).forEach(reminder -> {
+            if (notifications != null) notifications.deleteByReminderId(reminder.id());
+            reminders.delete(reminder);
+            if (reminder.recurrenceId() != null) recurrences.deleteById(reminder.recurrenceId());
+        });
         tasks.delete(task);
         if (task.recurrenceId() != null) recurrences.deleteById(task.recurrenceId());
         log.info("task_deleted taskId={} ownerId={}", taskId, ownerId);
+        if (users != null && activityEmails != null) users.findById(ownerId).ifPresent(owner -> {
+            activityEmails.taskDeleted(owner, task);
+            notifySpaceMembers(task, owner, "deleted");
+        });
     }
 
     private Task taskOwnedBy(Long ownerId, Long taskId) {
@@ -112,14 +133,22 @@ public class TaskManagementService implements TaskManagementUseCase {
     }
 
     private void notifySpaceMembers(Task task, com.nexo.domain.model.User actor, boolean completed) {
+        notifySpaceMembers(task, actor, completed ? "completed" : "created");
+    }
+
+    private void notifySpaceMembers(Task task, com.nexo.domain.model.User actor, String event) {
         if (task.spaceId() == null) return;
         members.findAllBySpaceId(task.spaceId()).stream()
                 .map(member -> member.userId())
                 .filter(memberId -> !memberId.equals(actor.id()))
                 .distinct()
                 .forEach(memberId -> users.findById(memberId).ifPresent(recipient -> {
-                    if (completed) activityEmails.sharedTaskCompleted(recipient, actor, task);
-                    else activityEmails.sharedTaskCreated(recipient, actor, task);
+                    switch (event) {
+                        case "completed" -> activityEmails.sharedTaskCompleted(recipient, actor, task);
+                        case "updated" -> activityEmails.sharedTaskUpdated(recipient, actor, task);
+                        case "deleted" -> activityEmails.sharedTaskDeleted(recipient, actor, task);
+                        default -> activityEmails.sharedTaskCreated(recipient, actor, task);
+                    }
                 }));
     }
 

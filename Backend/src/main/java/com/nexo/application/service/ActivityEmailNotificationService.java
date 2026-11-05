@@ -20,6 +20,14 @@ public class ActivityEmailNotificationService {
         this.delivery = delivery; this.preferences = preferences;
     }
 
+    /** Confirmación transaccional: se envía siempre al crear una cuenta. */
+    public void accountCreated(User user) {
+        send(user, "NEXO: cuenta creada correctamente",
+                "Hola " + user.name() + ",\n\n"
+                        + "Tu cuenta de NEXO fue creada correctamente. Ya puedes organizar tus tareas, notas y espacios colaborativos.\n\n"
+                        + "Bienvenido/a a NEXO.", "account_created");
+    }
+
     public void taskCreated(User owner, Task task) {
         String dueDate = task.dueDate() == null ? "Sin fecha límite" : task.dueDate().toString();
         sendActivity(owner, "NEXO: tarea creada - " + task.title(),
@@ -29,6 +37,20 @@ public class ActivityEmailNotificationService {
                         + "Prioridad: " + task.priority() + "\n"
                         + "Fecha límite: " + dueDate + "\n\n"
                         + "Ingresa a NEXO para organizarla.", "task_created");
+    }
+
+    public void taskUpdated(User owner, Task task) {
+        sendActivity(owner, "NEXO: tarea actualizada - " + task.title(),
+                "Hola " + owner.name() + ",\n\n"
+                        + "Se actualizaron los datos de tu tarea.\n\nTarea: " + task.title()
+                        + "\nPrioridad: " + task.priority() + "\n\nIngresa a NEXO para revisarla.", "task_updated");
+    }
+
+    public void taskDeleted(User owner, Task task) {
+        sendActivity(owner, "NEXO: tarea eliminada - " + task.title(),
+                "Hola " + owner.name() + ",\n\n"
+                        + "La tarea \"" + task.title() + "\" fue eliminada de NEXO.\n\n"
+                        + "Si fue un error, puedes crearla nuevamente desde Mis tareas.", "task_deleted");
     }
 
     public void sharedTaskCreated(User recipient, User creator, Task task) {
@@ -46,6 +68,20 @@ public class ActivityEmailNotificationService {
                         + completedBy.name() + " marcó como completada una tarea de tu espacio colaborativo.\n\n"
                         + "Tarea: " + task.title() + "\n\n"
                         + "Ingresa a NEXO para revisar el avance del equipo.", "shared_task_completed");
+    }
+
+    public void sharedTaskUpdated(User recipient, User updatedBy, Task task) {
+        sendActivity(recipient, "NEXO: tarea compartida actualizada - " + task.title(),
+                "Hola " + recipient.name() + ",\n\n"
+                        + updatedBy.name() + " actualizó una tarea de tu espacio colaborativo.\n\nTarea: " + task.title()
+                        + "\n\nIngresa a NEXO para ver los cambios.", "shared_task_updated");
+    }
+
+    public void sharedTaskDeleted(User recipient, User deletedBy, Task task) {
+        sendActivity(recipient, "NEXO: tarea compartida eliminada - " + task.title(),
+                "Hola " + recipient.name() + ",\n\n"
+                        + deletedBy.name() + " eliminó una tarea de tu espacio colaborativo.\n\nTarea: " + task.title(),
+                "shared_task_deleted");
     }
 
     public void spaceCreated(User creator, CollaborativeSpace space) {

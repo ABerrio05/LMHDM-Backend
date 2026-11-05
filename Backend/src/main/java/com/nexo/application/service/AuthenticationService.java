@@ -20,25 +20,33 @@ public class AuthenticationService implements AuthenticationUseCase {
     private final String developerEmail;
     private final PendingSpaceInvitationRepositoryPort pendingInvitations;
     private final SpaceMemberRepositoryPort members;
+    private final ActivityEmailNotificationService activityEmails;
 
     public AuthenticationService(UserRepositoryPort users, PasswordHasherPort passwordHasher, TokenProviderPort tokenProvider) {
-        this(users, passwordHasher, tokenProvider, "", null, null);
+        this(users, passwordHasher, tokenProvider, "", null, null, null);
     }
 
     public AuthenticationService(UserRepositoryPort users, PasswordHasherPort passwordHasher, TokenProviderPort tokenProvider,
                                  String developerEmail) {
-        this(users, passwordHasher, tokenProvider, developerEmail, null, null);
+        this(users, passwordHasher, tokenProvider, developerEmail, null, null, null);
     }
 
     public AuthenticationService(UserRepositoryPort users, PasswordHasherPort passwordHasher, TokenProviderPort tokenProvider,
                                  String developerEmail, PendingSpaceInvitationRepositoryPort pendingInvitations,
                                  SpaceMemberRepositoryPort members) {
+        this(users, passwordHasher, tokenProvider, developerEmail, pendingInvitations, members, null);
+    }
+
+    public AuthenticationService(UserRepositoryPort users, PasswordHasherPort passwordHasher, TokenProviderPort tokenProvider,
+                                 String developerEmail, PendingSpaceInvitationRepositoryPort pendingInvitations,
+                                 SpaceMemberRepositoryPort members, ActivityEmailNotificationService activityEmails) {
         this.users = users;
         this.passwordHasher = passwordHasher;
         this.tokenProvider = tokenProvider;
         this.developerEmail = developerEmail == null ? "" : developerEmail.trim().toLowerCase();
         this.pendingInvitations = pendingInvitations;
         this.members = members;
+        this.activityEmails = activityEmails;
     }
 
     @Override
@@ -53,6 +61,7 @@ public class AuthenticationService implements AuthenticationUseCase {
         User saved = users.save(new User(null, command.name(), command.email(), passwordHasher.hash(command.password()), LocalDateTime.now(),
                 roleFor(command.email())));
         acceptInvitation(saved, invitation);
+        if (activityEmails != null) activityEmails.accountCreated(saved);
         return resultFor(saved);
     }
 

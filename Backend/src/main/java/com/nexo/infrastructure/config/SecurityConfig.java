@@ -95,15 +95,17 @@ public class SecurityConfig {
                                                 TokenProviderPort tokenProvider,
                                                 @Value("${app.developer.email:}") String developerEmail,
                                                 PendingSpaceInvitationRepositoryPort pendingInvitations,
-                                                SpaceMemberRepositoryPort members) {
-        return new AuthenticationService(users, passwordHasher, tokenProvider, developerEmail, pendingInvitations, members);
+                                                SpaceMemberRepositoryPort members,
+                                                ActivityEmailNotificationService activityEmails) {
+        return new AuthenticationService(users, passwordHasher, tokenProvider, developerEmail, pendingInvitations, members, activityEmails);
     }
 
     @Bean
     TaskManagementUseCase taskManagementUseCase(TaskRepositoryPort tasks, SpaceMemberRepositoryPort members,
                                                 RecurrenceRepositoryPort recurrences, ReminderRepositoryPort reminders,
-                                                UserRepositoryPort users, ActivityEmailNotificationService activityEmails) {
-        return new TaskManagementService(tasks, members, recurrences, reminders, users, activityEmails);
+                                                UserRepositoryPort users, ActivityEmailNotificationService activityEmails,
+                                                EmailNotificationRepositoryPort notifications) {
+        return new TaskManagementService(tasks, members, recurrences, reminders, users, activityEmails, notifications);
     }
 
     @Bean
