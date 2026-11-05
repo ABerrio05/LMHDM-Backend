@@ -33,6 +33,10 @@ spring:
     properties:
       mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
       mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS:true}
+      # Un proveedor SMTP lento no puede dejar bloqueada una acción de la aplicación.
+      mail.smtp.connectiontimeout: ${MAIL_SMTP_CONNECTION_TIMEOUT_MS:10000}
+      mail.smtp.timeout: ${MAIL_SMTP_TIMEOUT_MS:10000}
+      mail.smtp.writetimeout: ${MAIL_SMTP_WRITE_TIMEOUT_MS:10000}
 
 server:
   port: ${SERVER_PORT:8080}

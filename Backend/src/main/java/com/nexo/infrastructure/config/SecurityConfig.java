@@ -2,6 +2,8 @@ package com.nexo.infrastructure.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -152,8 +154,20 @@ public class SecurityConfig {
     }
 
     @Bean
+    TaskExecutor notificationEmailExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("nexo-email-");
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean
     ActivityEmailNotificationService activityEmailNotificationService(EmailDeliveryPort emailDelivery,
-                                                                       NotificationPreferenceUseCase preferences) {
-        return new ActivityEmailNotificationService(emailDelivery, preferences);
+                                                                       NotificationPreferenceUseCase preferences,
+                                                                       TaskExecutor notificationEmailExecutor) {
+        return new ActivityEmailNotificationService(emailDelivery, preferences, notificationEmailExecutor);
     }
 }

@@ -9,15 +9,24 @@ import com.nexo.domain.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.Executor;
+
 /** Correos transaccionales informativos. Un fallo de entrega nunca revierte la operación de negocio. */
 public class ActivityEmailNotificationService {
     private static final Logger log = LoggerFactory.getLogger(ActivityEmailNotificationService.class);
     private final EmailDeliveryPort delivery;
     private final NotificationPreferenceUseCase preferences;
+    private final Executor deliveryExecutor;
 
-    public ActivityEmailNotificationService(EmailDeliveryPort delivery) { this(delivery, null); }
+    public ActivityEmailNotificationService(EmailDeliveryPort delivery) { this(delivery, null, Runnable::run); }
     public ActivityEmailNotificationService(EmailDeliveryPort delivery, NotificationPreferenceUseCase preferences) {
-        this.delivery = delivery; this.preferences = preferences;
+        this(delivery, preferences, Runnable::run);
+    }
+    public ActivityEmailNotificationService(EmailDeliveryPort delivery, NotificationPreferenceUseCase preferences,
+                                            Executor deliveryExecutor) {
+        this.delivery = delivery;
+        this.preferences = preferences;
+        this.deliveryExecutor = deliveryExecutor;
     }
 
     /** Confirmación transaccional: se envía siempre al crear una cuenta. */
@@ -128,12 +137,14 @@ public class ActivityEmailNotificationService {
             log.info("activity_email_skipped event={} recipientUserId={} reason=mail_not_configured", event, recipientUserId);
             return;
         }
-        try {
-            delivery.send(recipientEmail, subject, body);
-            log.info("activity_email_sent event={} recipientUserId={}", event, recipientUserId);
-        } catch (RuntimeException exception) {
-            log.warn("activity_email_failed event={} recipientUserId={}", event, recipientUserId, exception);
-        }
+        deliveryExecutor.execute(() -> {
+            try {
+                delivery.send(recipientEmail, subject, body);
+                log.info("activity_email_sent event={} recipientUserId={}", event, recipientUserId);
+            } catch (RuntimeException exception) {
+                log.warn("activity_email_failed event={} recipientUserId={}", event, recipientUserId, exception);
+            }
+        });
     }
 
     private String blankAsNotProvided(String value) {
