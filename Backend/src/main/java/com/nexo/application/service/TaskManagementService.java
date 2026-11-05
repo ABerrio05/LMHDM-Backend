@@ -71,11 +71,11 @@ public class TaskManagementService implements TaskManagementUseCase {
     public List<Task> listMine(Long ownerId) { return tasks.findAllByOwnerId(ownerId); }
 
     @Override
-    public Task getMine(Long ownerId, Long taskId) { return taskOwnedBy(ownerId, taskId); }
+    public Task getMine(Long ownerId, Long taskId) { return taskAccessibleBy(ownerId, taskId); }
 
     @Override
     public Task update(Long ownerId, Long taskId, UpdateTaskCommand command) {
-        Task current = taskOwnedBy(ownerId, taskId);
+        Task current = taskEditableBy(ownerId, taskId);
         Task updated = tasks.save(new Task(current.id(), command.title(), command.description(), command.dueDate(),
                 command.priority(), current.status(), current.ownerId(), current.spaceId(), current.recurrenceId()));
         log.info("task_updated taskId={} ownerId={}", updated.id(), ownerId);
@@ -88,7 +88,7 @@ public class TaskManagementService implements TaskManagementUseCase {
 
     @Override
     public Task changeStatus(Long ownerId, Long taskId, Task.TaskStatus status) {
-        Task current = taskOwnedBy(ownerId, taskId);
+        Task current = taskEditableBy(ownerId, taskId);
         Task updated = tasks.save(new Task(current.id(), current.title(), current.description(), current.dueDate(),
                 current.priority(), status, current.ownerId(), current.spaceId(), current.recurrenceId()));
         if (status == Task.TaskStatus.COMPLETADA && current.status() != Task.TaskStatus.COMPLETADA) {
@@ -103,7 +103,7 @@ public class TaskManagementService implements TaskManagementUseCase {
 
     @Override
     public void delete(Long ownerId, Long taskId) {
-        Task task = taskOwnedBy(ownerId, taskId);
+        Task task = taskEditableBy(ownerId, taskId);
         if (reminders != null) reminders.findAllByTaskId(taskId).forEach(reminder -> {
             if (notifications != null) notifications.deleteByReminderId(reminder.id());
             reminders.delete(reminder);
@@ -121,6 +121,23 @@ public class TaskManagementService implements TaskManagementUseCase {
     private Task taskOwnedBy(Long ownerId, Long taskId) {
         Task task = tasks.findById(taskId).orElseThrow(TaskNotFoundException::new);
         if (!task.ownerId().equals(ownerId)) throw new TaskAccessDeniedException();
+        return task;
+    }
+
+    private Task taskAccessibleBy(Long userId, Long taskId) {
+        Task task = tasks.findById(taskId).orElseThrow(TaskNotFoundException::new);
+        if (task.spaceId() == null) return taskOwnedBy(userId, taskId);
+        if (members.findBySpaceIdAndUserId(task.spaceId(), userId).isEmpty()) throw new TaskAccessDeniedException();
+        return task;
+    }
+
+    /** En espacios compartidos, todos salvo los invitados pueden gestionar tareas. */
+    private Task taskEditableBy(Long userId, Long taskId) {
+        Task task = taskAccessibleBy(userId, taskId);
+        if (task.spaceId() != null && members.findBySpaceIdAndUserId(task.spaceId(), userId)
+                .map(member -> member.role() == com.nexo.domain.model.SpaceMember.Role.INVITADO).orElse(true)) {
+            throw new TaskAccessDeniedException();
+        }
         return task;
     }
 

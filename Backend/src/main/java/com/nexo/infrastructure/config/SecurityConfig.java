@@ -111,8 +111,9 @@ public class SecurityConfig {
     @Bean
     ReminderManagementUseCase reminderManagementUseCase(ReminderRepositoryPort reminders, TaskRepositoryPort tasks,
                                                          EmailNotificationRepositoryPort notifications,
-                                                         RecurrenceRepositoryPort recurrences) {
-        return new ReminderManagementService(reminders, tasks, notifications, recurrences);
+                                                         RecurrenceRepositoryPort recurrences,
+                                                         SpaceMemberRepositoryPort members) {
+        return new ReminderManagementService(reminders, tasks, notifications, recurrences, members);
     }
 
     @Bean

@@ -67,7 +67,7 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
     }
 
     @Override public CollaborativeSpace update(Long userId, Long spaceId, UpdateSpaceCommand command) {
-        requireAdministrator(userId, spaceId);
+        requireManager(userId, spaceId);
         CollaborativeSpace current = spaces.findById(spaceId).orElseThrow(SpaceNotFoundException::new);
         CollaborativeSpace updated = spaces.save(new CollaborativeSpace(current.id(), command.name(), command.description(),
                 current.creatorId(), current.createdAt()));
@@ -76,7 +76,7 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
     }
 
     @Override public void delete(Long userId, Long spaceId) {
-        requireAdministrator(userId, spaceId);
+        requireManager(userId, spaceId);
         tasks.findAllBySpaceId(spaceId).forEach(task -> tasks.save(new Task(task.id(), task.title(), task.description(),
                 task.dueDate(), task.priority(), task.status(), task.ownerId(), null, task.recurrenceId())));
         members.deleteAllBySpaceId(spaceId);
@@ -85,7 +85,12 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
     }
 
     @Override public InvitationResult invite(Long userId, Long spaceId, InviteMemberCommand command) {
-        requireAdministrator(userId, spaceId);
+        SpaceMember inviterMembership = requireMembership(userId, spaceId);
+        if (inviterMembership.role() == SpaceMember.Role.INVITADO
+                || (inviterMembership.role() == SpaceMember.Role.MIEMBRO
+                && (command.role() == SpaceMember.Role.ADMINISTRADOR || command.role() == SpaceMember.Role.MODERADOR))) {
+            throw new SpaceAccessDeniedException();
+        }
         CollaborativeSpace space = spaces.findById(spaceId).orElseThrow(SpaceNotFoundException::new);
         User inviter = users.findById(userId).orElseThrow(UserNotFoundException::new);
         User invitedUser = users.findByEmail(command.email()).orElse(null);
@@ -126,6 +131,30 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
         requireMembership(userId, spaceId); return members.findAllBySpaceId(spaceId);
     }
 
+    @Override public List<MemberView> listMemberViews(Long userId, Long spaceId) {
+        requireMembership(userId, spaceId);
+        return members.findAllBySpaceId(spaceId).stream().map(member -> {
+            String name = users.findById(member.userId()).map(User::name).orElse("Usuario no disponible");
+            return new MemberView(member.id(), member.userId(), name, member.role(), member.joinedAt());
+        }).toList();
+    }
+
+    @Override public SpaceMember updateMemberRole(Long userId, Long spaceId, Long memberUserId, SpaceMember.Role role) {
+        requireManager(userId, spaceId);
+        return members.updateRole(spaceId, memberUserId, role);
+    }
+
+    @Override public Task assignTask(Long userId, Long spaceId, Long taskId, Long assigneeId) {
+        requireTaskContributor(userId, spaceId);
+        Task current = tasks.findById(taskId).orElseThrow(TaskManagementService.TaskNotFoundException::new);
+        if (!spaceId.equals(current.spaceId())) throw new TaskManagementService.TaskAccessDeniedException();
+        requireMembership(assigneeId, spaceId);
+        Task assigned = tasks.save(new Task(current.id(), current.title(), current.description(), current.dueDate(),
+                current.priority(), current.status(), assigneeId, current.spaceId(), current.recurrenceId()));
+        log.info("space_task_assigned taskId={} spaceId={} assigneeId={} requestedBy={}", taskId, spaceId, assigneeId, userId);
+        return assigned;
+    }
+
     @Override public List<Task> listTasks(Long userId, Long spaceId) {
         requireMembership(userId, spaceId); return tasks.findAllBySpaceId(spaceId);
     }
@@ -134,8 +163,14 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
         spaces.findById(spaceId).orElseThrow(SpaceNotFoundException::new);
         return members.findBySpaceIdAndUserId(spaceId, userId).orElseThrow(SpaceAccessDeniedException::new);
     }
-    private void requireAdministrator(Long userId, Long spaceId) {
-        if (requireMembership(userId, spaceId).role() != SpaceMember.Role.ADMINISTRADOR) {
+    private void requireManager(Long userId, Long spaceId) {
+        SpaceMember.Role role = requireMembership(userId, spaceId).role();
+        if (role != SpaceMember.Role.ADMINISTRADOR && role != SpaceMember.Role.MODERADOR) {
+            throw new SpaceAccessDeniedException();
+        }
+    }
+    private void requireTaskContributor(Long userId, Long spaceId) {
+        if (requireMembership(userId, spaceId).role() == SpaceMember.Role.INVITADO) {
             throw new SpaceAccessDeniedException();
         }
     }

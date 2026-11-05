@@ -26,4 +26,5 @@ public class SpaceMemberJpaEntity {
     Long getUserId() { return userId; }
     String getRole() { return role; }
     LocalDateTime getJoinedAt() { return joinedAt; }
+    void updateRole(String newRole) { this.role = newRole; }
 }

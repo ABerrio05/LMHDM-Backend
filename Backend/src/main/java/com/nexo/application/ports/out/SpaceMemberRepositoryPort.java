@@ -9,5 +9,8 @@ public interface SpaceMemberRepositoryPort {
     Optional<SpaceMember> findBySpaceIdAndUserId(Long spaceId, Long userId);
     List<SpaceMember> findAllBySpaceId(Long spaceId);
     List<SpaceMember> findAllByUserId(Long userId);
+    default SpaceMember updateRole(Long spaceId, Long userId, SpaceMember.Role role) {
+        throw new UnsupportedOperationException("La actualización de rol no está disponible");
+    }
     void deleteAllBySpaceId(Long spaceId);
 }

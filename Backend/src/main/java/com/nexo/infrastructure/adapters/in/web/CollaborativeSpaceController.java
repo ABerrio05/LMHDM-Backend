@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -72,9 +73,23 @@ public class CollaborativeSpaceController {
     }
     @GetMapping("/{spaceId}/members")
     @Operation(summary = "Listar integrantes")
-    public List<SpaceMember> members(@AuthenticationPrincipal Long userId,
+    public List<MemberResponse> members(@AuthenticationPrincipal Long userId,
                                                                           @PathVariable Long spaceId) {
-        return spaces.listMembers(userId, spaceId);
+        return spaces.listMemberViews(userId, spaceId).stream()
+                .map(member -> new MemberResponse(member.id(), member.userId(), member.userName(), member.role(), member.joinedAt()))
+                .toList();
+    }
+    @PutMapping("/{spaceId}/members/{memberUserId}/role")
+    @Operation(summary = "Modificar rol de integrante")
+    public SpaceMember updateRole(@AuthenticationPrincipal Long userId, @PathVariable Long spaceId,
+                                  @PathVariable Long memberUserId, @Valid @RequestBody UpdateRoleRequest request) {
+        return spaces.updateMemberRole(userId, spaceId, memberUserId, request.role());
+    }
+    @PatchMapping("/{spaceId}/tasks/{taskId}/assignee")
+    @Operation(summary = "Asignar tarea a integrante")
+    public Task assignTask(@AuthenticationPrincipal Long userId, @PathVariable Long spaceId, @PathVariable Long taskId,
+                           @Valid @RequestBody AssignTaskRequest request) {
+        return spaces.assignTask(userId, spaceId, taskId, request.assigneeId());
     }
     @GetMapping("/{spaceId}/tasks")
     @Operation(summary = "Listar tareas de un espacio")
@@ -84,4 +99,8 @@ public class CollaborativeSpaceController {
 
     public record CreateSpaceRequest(@NotBlank @Size(max = 150) String name, @Size(max = 500) String description) { }
     public record InviteMemberRequest(@NotBlank @Email String email, @NotNull SpaceMember.Role role) { }
+    public record UpdateRoleRequest(@NotNull SpaceMember.Role role) { }
+    public record AssignTaskRequest(@NotNull Long assigneeId) { }
+    public record MemberResponse(Long id, Long userId, String userName, SpaceMember.Role role,
+                                 java.time.LocalDateTime joinedAt) { }
 }

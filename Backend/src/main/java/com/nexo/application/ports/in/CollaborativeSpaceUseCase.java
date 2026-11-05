@@ -13,10 +13,14 @@ public interface CollaborativeSpaceUseCase {
     void delete(Long userId, Long spaceId);
     InvitationResult invite(Long userId, Long spaceId, InviteMemberCommand command);
     List<SpaceMember> listMembers(Long userId, Long spaceId);
+    List<MemberView> listMemberViews(Long userId, Long spaceId);
+    SpaceMember updateMemberRole(Long userId, Long spaceId, Long memberUserId, SpaceMember.Role role);
+    Task assignTask(Long userId, Long spaceId, Long taskId, Long assigneeId);
     List<Task> listTasks(Long userId, Long spaceId);
 
     record CreateSpaceCommand(String name, String description) { }
     record UpdateSpaceCommand(String name, String description) { }
     record InviteMemberCommand(String email, SpaceMember.Role role) { }
     record InvitationResult(SpaceMember member, boolean registrationRequired) { }
+    record MemberView(Long id, Long userId, String userName, SpaceMember.Role role, java.time.LocalDateTime joinedAt) { }
 }
