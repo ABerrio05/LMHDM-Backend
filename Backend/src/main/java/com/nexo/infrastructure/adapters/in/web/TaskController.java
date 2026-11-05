@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Size;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import com.nexo.domain.model.Recurrence;
@@ -69,7 +70,8 @@ public class TaskController {
         tasks.delete(userId, taskId); return ResponseEntity.noContent().build();
     }
 
-    public record TaskRequest(@NotBlank @Size(max = 255) String title, String description, LocalDateTime dueDate,
+    public record TaskRequest(@NotBlank @Size(max = 255) String title, String description,
+                              @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class) LocalDateTime dueDate,
                               @NotNull Task.Priority priority, Long spaceId,
                               Recurrence.Frequency recurrenceFrequency,
                               @Min(1) @Max(365) Integer recurrenceInterval,
