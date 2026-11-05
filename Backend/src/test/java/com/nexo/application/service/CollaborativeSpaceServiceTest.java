@@ -1,7 +1,6 @@
 package com.nexo.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.nexo.application.ports.in.CollaborativeSpaceUseCase;
@@ -42,7 +41,7 @@ class CollaborativeSpaceServiceTest {
     }
 
     @Test
-    void regularMemberCannotInviteAnotherUser() {
+    void regularMemberCanInviteAnotherUser() {
         InMemorySpaceRepository spaces = new InMemorySpaceRepository();
         InMemoryMemberRepository members = new InMemoryMemberRepository();
         User owner = new User(1L, "Ana", "ana@nexo.test", "hash", LocalDateTime.now());
@@ -54,8 +53,11 @@ class CollaborativeSpaceServiceTest {
                 new CollaborativeSpaceUseCase.CreateSpaceCommand("Comité", null));
         members.save(new SpaceMember(null, space.id(), member.id(), SpaceMember.Role.MIEMBRO, LocalDateTime.now()));
 
-        assertThrows(CollaborativeSpaceService.SpaceAccessDeniedException.class, () -> service.invite(member.id(),
-                space.id(), new CollaborativeSpaceUseCase.InviteMemberCommand(third.email(), SpaceMember.Role.MIEMBRO)));
+        var invitation = service.invite(member.id(), space.id(),
+                new CollaborativeSpaceUseCase.InviteMemberCommand(third.email(), SpaceMember.Role.MIEMBRO));
+
+        assertEquals(third.id(), invitation.member().userId());
+        assertEquals(SpaceMember.Role.MIEMBRO, invitation.member().role());
     }
 
     @Test
