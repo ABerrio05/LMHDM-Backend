@@ -19,7 +19,7 @@ public class TaskPersistenceAdapter implements TaskRepositoryPort {
         if (task.id() == null) return toDomain(repository.save(entity));
         TaskJpaEntity existing = repository.findById(task.id()).orElseThrow();
         existing.update(entity.getTitle(), entity.getDescription(), entity.getDueDate(), entity.getPriority(),
-                entity.getStatus(), entity.getSpaceId(), entity.getRecurrenceId());
+                entity.getStatus(), entity.getOwnerId(), entity.getSpaceId(), entity.getRecurrenceId());
         return toDomain(repository.save(existing));
     }
 

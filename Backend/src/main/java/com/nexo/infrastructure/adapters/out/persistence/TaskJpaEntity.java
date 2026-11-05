@@ -37,12 +37,13 @@ public class TaskJpaEntity {
     public Long getSpaceId() { return spaceId; }
     public Long getRecurrenceId() { return recurrenceId; }
     public void update(String title, String description, LocalDateTime dueDate, String priority, String status,
-                       Long spaceId, Long recurrenceId) {
+                       Long ownerId, Long spaceId, Long recurrenceId) {
         this.title = title;
         this.description = description;
         this.dueDate = dueDate;
         this.priority = priority;
         this.status = status;
+        this.ownerId = ownerId;
         this.spaceId = spaceId;
         this.recurrenceId = recurrenceId;
     }
