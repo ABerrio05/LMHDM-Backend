@@ -2,10 +2,12 @@ package com.nexo.infrastructure.adapters.out.mail;
 
 import com.nexo.application.ports.out.EmailDeliveryPort;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 /** Evita simular entregas cuando todavía no se han configurado credenciales SMTP. */
 @Component
+@Primary
 @ConditionalOnProperty(prefix = "app.notifications.email", name = "enabled", havingValue = "false", matchIfMissing = true)
 public class DisabledEmailDeliveryAdapter implements EmailDeliveryPort {
     @Override public boolean isConfigured() { return false; }

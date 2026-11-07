@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 /** Casos de uso para compartir listas de tareas sin depender de HTTP ni JPA. */
 public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
     private static final Logger log = LoggerFactory.getLogger(CollaborativeSpaceService.class);
+    private static final SecureRandom INVITATION_TOKEN_RANDOM = new SecureRandom();
     private final CollaborativeSpaceRepositoryPort spaces;
     private final SpaceMemberRepositoryPort members;
     private final UserRepositoryPort users;
@@ -123,7 +124,7 @@ public class CollaborativeSpaceService implements CollaborativeSpaceUseCase {
 
     private String newInvitationToken() {
         byte[] bytes = new byte[32];
-        new SecureRandom().nextBytes(bytes);
+        INVITATION_TOKEN_RANDOM.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 

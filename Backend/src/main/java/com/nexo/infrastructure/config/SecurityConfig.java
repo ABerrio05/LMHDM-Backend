@@ -1,5 +1,7 @@
 package com.nexo.infrastructure.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
@@ -144,8 +146,8 @@ public class SecurityConfig {
 
     @Bean
     TaskAssistantUseCase taskAssistantUseCase(TaskRepositoryPort tasks, PersonalNoteRepositoryPort notes,
-                                              TaskAssistantProviderPort provider) {
-        return new TaskAssistantService(tasks, notes, provider);
+                                              ObjectProvider<TaskAssistantProviderPort> providers) {
+        return new TaskAssistantService(tasks, notes, requireUnique(providers, "proveedor de IA"));
     }
 
     @Bean
@@ -153,21 +155,33 @@ public class SecurityConfig {
         return new NotificationPreferenceService(preferences);
     }
 
-    @Bean
-    TaskExecutor notificationEmailExecutor() {
+    @Bean(name = "notificationEmailExecutor")
+    ThreadPoolTaskExecutor notificationEmailExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(2);
         executor.setMaxPoolSize(4);
         executor.setQueueCapacity(100);
         executor.setThreadNamePrefix("nexo-email-");
-        executor.initialize();
+        executor.setWaitForTasksToCompleteOnShutdown(false);
         return executor;
     }
 
     @Bean
-    ActivityEmailNotificationService activityEmailNotificationService(EmailDeliveryPort emailDelivery,
+    ActivityEmailNotificationService activityEmailNotificationService(ObjectProvider<EmailDeliveryPort> emailDeliveries,
                                                                        NotificationPreferenceUseCase preferences,
+                                                                       @Qualifier("notificationEmailExecutor")
                                                                        TaskExecutor notificationEmailExecutor) {
-        return new ActivityEmailNotificationService(emailDelivery, preferences, notificationEmailExecutor);
+        return new ActivityEmailNotificationService(
+                requireUnique(emailDeliveries, "servicio de entrega de correo"),
+                preferences,
+                notificationEmailExecutor);
+    }
+
+    private static <T> T requireUnique(ObjectProvider<T> candidates, String dependency) {
+        T candidate = candidates.getIfUnique();
+        if (candidate == null) {
+            throw new IllegalStateException("No hay una implementación única disponible para " + dependency);
+        }
+        return candidate;
     }
 }

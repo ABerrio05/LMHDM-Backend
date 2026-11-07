@@ -3,9 +3,11 @@ package com.nexo.infrastructure.adapters.out.ai;
 import com.nexo.application.ports.out.TaskAssistantProviderPort;
 import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 @Component
+@Primary
 @ConditionalOnProperty(prefix = "app.ai", name = "enabled", havingValue = "false", matchIfMissing = true)
 public class DisabledTaskAssistant implements TaskAssistantProviderPort {
     @Override public boolean isConfigured() { return false; }
