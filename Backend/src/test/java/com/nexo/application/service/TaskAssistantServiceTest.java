@@ -67,6 +67,34 @@ class TaskAssistantServiceTest {
         assertEquals("contenido actualizado", action.description());
     }
 
+    @Test
+    void recoversNoteUpdateWithAccentedCharacters() {
+        CapturingProvider provider = new CapturingProvider(
+                true,
+                "La nota quedará actualizada al confirmar.");
+        PersonalNote note = new PersonalNote(
+                10L,
+                "Reunión académica",
+                "contenido anterior",
+                41L,
+                LocalDateTime.of(2026, 11, 7, 9, 0));
+        TaskAssistantService service = new TaskAssistantService(
+                new FixedTaskRepository(List.of()),
+                new FixedNoteRepository(List.of(note)),
+                provider);
+
+        TaskAssistantSuggestion suggestion = service.suggest(
+                41L,
+                "Modifica la descripción de la nota Reunión académica por esta: síntesis de evaluación");
+
+        assertEquals(1, suggestion.proposedActions().size());
+        AssistantActionProposal action = suggestion.proposedActions().getFirst();
+        assertEquals(AssistantActionProposal.Type.NOTE_UPDATE, action.type());
+        assertEquals(10L, action.targetId());
+        assertEquals("Reunión académica", action.title());
+        assertEquals("síntesis de evaluación", action.description());
+    }
+
     private static Task pendingTask() {
         return new Task(1L, "Entregar avance", "", LocalDateTime.of(2026, 11, 2, 10, 0),
                 Task.Priority.ALTA, Task.TaskStatus.PENDIENTE, 7L, null, null);

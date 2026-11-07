@@ -22,7 +22,7 @@ public class TaskAssistantService implements TaskAssistantUseCase {
     private static final Logger log = LoggerFactory.getLogger(TaskAssistantService.class);
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final Pattern NOTE_CONTENT_UPDATE = Pattern.compile(
-            "(?is)(?:descripci[oó]n|contenido).*?(?:\\bpor\\b|\\ba\\b)\\s*(?:esta\\s*)?:?\\s*(.+)$");
+            "(?isu)(?:descripci[oó]n|contenido).*?(?:\\bpor\\b|\\ba\\b)\\s*(?:esta\\s*)?:?\\s*(.+)$");
     private final TaskRepositoryPort tasks;
     private final TaskAssistantProviderPort provider;
     private final PersonalNoteRepositoryPort notes;
